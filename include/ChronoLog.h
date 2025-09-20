@@ -196,7 +196,7 @@ private:
       } else {
         #if defined(CHRONOLOG_PLATFORM_ARDUINO)
           Serial.print("[Log too long: memory error]");
-        #elif defined(DEBUG_PLATFORM_ZEPHYR)
+        #elif defined(DEBUG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
           printf("[Log too long: memory error]");
         #endif
       }
@@ -204,7 +204,7 @@ private:
 
     #if defined(CHRONOLOG_PLATFORM_ARDUINO)
       Serial.println();
-    #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
+    #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
       printf("\n");
     #endif
   }
