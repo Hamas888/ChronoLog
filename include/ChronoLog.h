@@ -176,7 +176,7 @@ private:
     if (len < CHRONOLOG_BUFFER_LEN) {
       #if defined(CHRONOLOG_PLATFORM_ARDUINO)
         Serial.print(msg_buf);
-      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
+      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
         printf("%s", msg_buf);
       #endif
     } else {
