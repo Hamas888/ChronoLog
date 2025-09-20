@@ -27,12 +27,20 @@
 
 #if defined(ARDUINO)                                                                                       // Platform detection
   #define CHRONOLOG_PLATFORM_ARDUINO
+#elif defined(ESP_PLATFORM)
+  #define CHRONOLOG_PLATFORM_ESP_IDF
 #elif defined(__ZEPHYR__)
   #define CHRONOLOG_PLATFORM_ZEPHYR
 #endif
 
 #if defined(CHRONOLOG_PLATFORM_ARDUINO)
   #include <Arduino.h>
+  #include <freertos/task.h>
+  #include <freertos/FreeRTOS.h>
+#elif defined(CHRONOLOG_PLATFORM_ESP_IDF)
+  #include <time.h>
+  #include <esp_log.h>
+  #include <sys/time.h>
   #include <freertos/task.h>
   #include <freertos/FreeRTOS.h>
 #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
@@ -128,7 +136,7 @@ private:
   void print(const char* levelStr, const char* color, const char* fmt, va_list args) const {
     char time_buf[16];
 
-    #if defined(CHRONOLOG_PLATFORM_ARDUINO)
+    #if defined(CHRONOLOG_PLATFORM_ARDUINO) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
       struct timeval tv;
       gettimeofday(&tv, NULL);
       struct tm timeinfo;
@@ -141,7 +149,7 @@ private:
     #endif
 
     const char* taskName =
-    #if defined(CHRONOLOG_PLATFORM_ARDUINO)
+    #if defined(CHRONOLOG_PLATFORM_ARDUINO) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
       pcTaskGetName(NULL);
     #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
       k_thread_name_get(k_current_get());
@@ -154,7 +162,7 @@ private:
     #if defined(CHRONOLOG_PLATFORM_ARDUINO)
       Serial.printf("%s | %-15s | %s%-8s%s | %-16s | ",
         time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
-    #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
+    #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
       printf("%s | %-15s | %s%-8s%s | %-16s | ",
         time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
     #endif
@@ -180,7 +188,7 @@ private:
 
         #if defined(CHRONOLOG_PLATFORM_ARDUINO)
           Serial.print(dynamic_buf);
-        #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
+        #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
           printf("%s", dynamic_buf);
         #endif
 

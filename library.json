@@ -26,6 +26,14 @@
   },
   "frameworks": ["arduino"],
   "platforms": ["espressif32"],
+  "build": {
+    "flags": [
+      "-std=gnu++17"
+    ],
+    "unflags": [
+      "-std=gnu++11"
+    ]
+  },
   "license": "MIT",
   "homepage": "https://github.com/Hamas888/ChronoLog",
   "examples": [
