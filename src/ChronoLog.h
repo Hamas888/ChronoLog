@@ -151,7 +151,7 @@ private:
 
     if (!taskName) taskName = "MainTask";
 
-    #if defined(DEBUG_PLATFORM_ARDUINO)
+    #if defined(CHRONOLOG_PLATFORM_ARDUINO)
       Serial.printf("%s | %-15s | %s%-8s%s | %-16s | ",
         time_buf, name, color, levelStr, COLOR_RESET, taskName);
     #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
