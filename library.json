@@ -42,6 +42,7 @@
   "export": {
     "include": [
       "src",
+      "include",
       "examples",
       "library.json",
       "LICENSE",
