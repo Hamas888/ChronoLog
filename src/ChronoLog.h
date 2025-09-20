@@ -153,10 +153,10 @@ private:
 
     #if defined(CHRONOLOG_PLATFORM_ARDUINO)
       Serial.printf("%s | %-15s | %s%-8s%s | %-16s | ",
-        time_buf, name, color, levelStr, COLOR_RESET, taskName);
+        time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
     #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
       printf("%s | %-15s | %s%-8s%s | %-16s | ",
-        time_buf, name, color, levelStr, COLOR_RESET, taskName);
+        time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
     #endif
 
     char msg_buf[CHRONOLOG_BUFFER_LEN];
