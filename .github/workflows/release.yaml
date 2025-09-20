@@ -1,0 +1,56 @@
+name: Release ChronoLog Library
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      # Step 3: Extract version from library.json
+      - name: Extract version
+        id: get_version
+        run: |
+          VERSION=$(python -c "import json; print(json.load(open('library.json'))['version'])")
+          echo "Library version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      # Step 4: Create a zip file named with the version
+      - name: Create zip archive
+        run: |
+          ZIP_NAME="OTA-Dash_v${{ steps.get_version.outputs.version }}.zip"
+          zip -r "$ZIP_NAME" src examples library.json README.md
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_ENV
+
+      # Step 5: Create or update GitHub release
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
+          body: OTA-Dash Library version v${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          artifacts: ${{ env.zip_name }}
+          allowUpdates: true
