@@ -44,6 +44,7 @@
       "src",
       "include",
       "examples",
+      "CMakeLists.txt",
       "library.json",
       "LICENSE",
       "README.md"
