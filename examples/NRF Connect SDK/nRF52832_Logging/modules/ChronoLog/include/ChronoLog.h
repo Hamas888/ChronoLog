@@ -31,6 +31,11 @@
   #define CHRONOLOG_PLATFORM_ESP_IDF
 #elif defined(__ZEPHYR__)
   #define CHRONOLOG_PLATFORM_ZEPHYR
+#elif defined(STM32F0) || defined(STM32F1) || defined(STM32F3) || defined(STM32F4) || \
+      defined(STM32F7) || defined(STM32G0) || defined(STM32G4) || defined(STM32H7) || \
+      defined(STM32L0) || defined(STM32L1) || defined(STM32L4) || defined(STM32L5) || \
+      defined(STM32WB) || defined(STM32WL)
+  #define CHRONOLOG_PLATFORM_STM32_HAL
 #endif
 
 #if defined(CHRONOLOG_PLATFORM_ARDUINO)
@@ -53,6 +58,16 @@
     #include <zephyr/kernel.h>
     #include <zephyr/sys/printk.h>
   }
+#elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+  #include "main.h"
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <stdarg.h>
+  #include <string.h>
+#if defined(osCMSIS) || defined(FREERTOS)
+  #define CHRONOLOG_STM32_FREERTOS
+  #include "cmsis_os.h"
+#endif // CHRONOLOG_STM32_FREERTOS
 #endif
 
 
@@ -82,7 +97,11 @@ public:
   constexpr ChronoLogger(const char* moduleName, ChronoLogLevel level = CHRONOLOG_LEVEL_DEBUG)
     : name(moduleName), chronoLogLevel(level) {}
 
-  void setLevel(ChronoLogLevel level) { chronoLogLevel = level; }
+  void setLevel(ChronoLogLevel level)               { chronoLogLevel = level; }
+
+#if defined(CHRONOLOG_PLATFORM_STM32_HAL)
+  void setUartHandler(UART_HandleTypeDef* handler)  { uartHandler = handler;  }
+#endif
 
   void debug(const char* fmt, ...) const {
     if (chronoLogLevel >= CHRONOLOG_LEVEL_DEBUG) {
@@ -133,6 +152,26 @@ private:
   const char* name;
   ChronoLogLevel chronoLogLevel;
 
+#if defined(CHRONOLOG_PLATFORM_STM32_HAL)
+  UART_HandleTypeDef* uartHandler = nullptr;
+#endif
+
+  static const char* getCurrentTaskName() {
+  #if defined(CHRONOLOG_PLATFORM_STM32_HAL) && defined(CHRONOLOG_STM32_FREERTOS)
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+      const char* name = pcTaskGetName(NULL);
+      return (name != nullptr) ? name : "MainTask";
+    }
+    return "MainTask";
+  #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
+    return k_thread_name_get(k_current_get());
+  #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_ARDUINO)
+    return pcTaskGetName(NULL);
+  #else
+    return "MainTask";
+  #endif
+  }
+
   void print(const char* levelStr, const char* color, const char* fmt, va_list args) const {
     char time_buf[16];
 
@@ -146,18 +185,13 @@ private:
       uint64_t ms = k_uptime_get();
       snprintf(time_buf, sizeof(time_buf), "%02llu:%02llu:%02llu",
         (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
+    #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+      uint32_t ms = HAL_GetTick();
+      snprintf(time_buf, sizeof(time_buf), "%02lu:%02lu:%02lu",
+        (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
     #endif
 
-    const char* taskName =
-    #if defined(CHRONOLOG_PLATFORM_ARDUINO) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
-      pcTaskGetName(NULL);
-    #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
-      k_thread_name_get(k_current_get());
-    #else
-      "MainTask";
-    #endif
-
-    if (!taskName) taskName = "MainTask";
+    const char* taskName = getCurrentTaskName();
 
     #if defined(CHRONOLOG_PLATFORM_ARDUINO)
       Serial.printf("%s | %-15s | %s%-8s%s | %-16s | ",
@@ -165,6 +199,13 @@ private:
     #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
       printf("%s | %-15s | %s%-8s%s | %-16s | ",
         time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
+    #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+      char line_buf[96];
+      snprintf(line_buf, sizeof(line_buf),
+               "%s | %-15s | %s%-8s%s | %-16s | ",
+               time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
+      if (!uartHandler) return;
+      HAL_UART_Transmit(uartHandler, (uint8_t*)line_buf, strlen(line_buf), HAL_MAX_DELAY);
     #endif
 
     char msg_buf[CHRONOLOG_BUFFER_LEN];
@@ -178,6 +219,9 @@ private:
         Serial.print(msg_buf);
       #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
         printf("%s", msg_buf);
+      #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+        if (!uartHandler) return;
+        HAL_UART_Transmit(uartHandler, (uint8_t*)msg_buf, len, HAL_MAX_DELAY);
       #endif
     } else {
       char* dynamic_buf = (char*)malloc(len + 1);
@@ -190,6 +234,9 @@ private:
           Serial.print(dynamic_buf);
         #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
           printf("%s", dynamic_buf);
+        #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+          if (!uartHandler) return;
+          HAL_UART_Transmit(uartHandler, (uint8_t*)dynamic_buf, len, HAL_MAX_DELAY);
         #endif
 
         free(dynamic_buf);
@@ -198,6 +245,10 @@ private:
           Serial.print("[Log too long: memory error]");
         #elif defined(DEBUG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
           printf("[Log too long: memory error]");
+        #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+          if (!uartHandler) return;
+          const char* err_msg = "[Log too long: memory error]";
+          HAL_UART_Transmit(uartHandler, (uint8_t*)err_msg, strlen(err_msg), HAL_MAX_DELAY);
         #endif
       }
     }
@@ -206,6 +257,10 @@ private:
       Serial.println();
     #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
       printf("\n");
+    #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+      if (!uartHandler) return;
+      const char* newline = "\n";
+      HAL_UART_Transmit(uartHandler, (uint8_t*)newline, strlen(newline), HAL_MAX_DELAY);
     #endif
   }
 };
