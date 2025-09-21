@@ -13,6 +13,10 @@ elseif(IDF_PROJECT)
         # SRCS "src/ChronoLog.cpp" → not needed yet
         INCLUDE_DIRS "include"
     )
+    
+# STM32 / generic CMake project
 else()
-    message(FATAL_ERROR "ChronoLog: Unknown build system. Use Zephyr or ESP-IDF.")
+    add_library(ChronoLog INTERFACE)
+    target_include_directories(ChronoLog INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_compile_features(ChronoLog INTERFACE cxx_std_17)
 endif()

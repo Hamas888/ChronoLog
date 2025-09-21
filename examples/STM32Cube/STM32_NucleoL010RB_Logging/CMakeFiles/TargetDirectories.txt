@@ -1,0 +1,6 @@
+C:/My_Stuff/Embedded/STM32_Learning/STM32_NucleoL010RB_Logging2/CMakeFiles/STM32_NucleoL010RB_Logging2.dir
+C:/My_Stuff/Embedded/STM32_Learning/STM32_NucleoL010RB_Logging2/CMakeFiles/edit_cache.dir
+C:/My_Stuff/Embedded/STM32_Learning/STM32_NucleoL010RB_Logging2/CMakeFiles/rebuild_cache.dir
+C:/My_Stuff/Embedded/STM32_Learning/STM32_NucleoL010RB_Logging2/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+C:/My_Stuff/Embedded/STM32_Learning/STM32_NucleoL010RB_Logging2/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+C:/My_Stuff/Embedded/STM32_Learning/STM32_NucleoL010RB_Logging2/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
