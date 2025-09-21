@@ -1,0 +1,5 @@
+# idf_component.yml
+dependencies:
+  ChronoLog:
+    git: https://github.com/Hamas888/ChronoLog.git
+    version: "^1.0.0"

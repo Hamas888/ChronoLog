@@ -1,0 +1,3 @@
+version: 1.0.0
+description: "A chrono logging component for ESP-IDF"
+url: "https://github.com/Hamas888/ChronoLog"

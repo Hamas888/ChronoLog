@@ -1,0 +1,58 @@
+{
+  "name": "ChronoLog",
+  "version": "1.0.0",
+  "description": "Cross-platform real-time logger for embedded systems (ESP32, STM32, nRF52)",
+  "keywords": [
+    "logger",
+    "rtos",
+    "uart",
+    "debug",
+    "platformio",
+    "esp32",
+    "stm32",
+    "nrf52"
+  ],
+  "authors": [
+    {
+      "name": "Hamas Saeed",
+      "email": "hamasaeed888@gmail.com",
+      "url": "https://github.com/Hamas888",
+      "maintainer": true
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hamas888/ChronoLog.git"
+  },
+  "frameworks": ["arduino", "espidf"],
+  "platforms": ["espressif32"],
+  "build": {
+    "flags": [
+      "-std=gnu++17"
+    ],
+    "unflags": [
+      "-std=gnu++11"
+    ]
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Hamas888/ChronoLog",
+  "examples": [
+    "examples"
+  ],
+  "export": {
+    "include": [
+      "src",
+      "include",
+      "examples",
+      "CMakeLists.txt",
+      "library.json",
+      "LICENSE",
+      "README.md"
+    ],
+    "exclude": [
+      "test",
+      ".pio",
+      ".vscode"
+    ]
+  }
+}
