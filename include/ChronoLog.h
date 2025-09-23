@@ -54,7 +54,7 @@
 #if defined(CHRONOLOG_PLATFORM_ARDUINO)
   #include <Arduino.h>
 #if defined(ESP32) || defined(ESP8266)
-  #define CHRONOLOG_ESP_FREERTOS
+  #define CHRONOLOG_ESP
   #include <freertos/task.h>
   #include <freertos/FreeRTOS.h>
 #endif
@@ -181,7 +181,7 @@ private:
     return "MainTask";
   #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
     return k_thread_name_get(k_current_get());
-  #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || (defined(CHRONOLOG_PLATFORM_ARDUINO) && defined(CHRONOLOG_ESP_FREERTOS))
+  #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || (defined(CHRONOLOG_PLATFORM_ARDUINO) && defined(CHRONOLOG_ESP))
     return pcTaskGetName(NULL);
   #else
     return "MainTask";
@@ -191,7 +191,7 @@ private:
   void print(const char* levelStr, const char* color, const char* fmt, va_list args) const {
     char time_buf[16];
 
-    #if (defined(CHRONOLOG_PLATFORM_ARDUINO) || defined(CHRONOLOG_PLATFORM_ESP_IDF)) && defined(CHRONOLOG_ESP_FREERTOS)
+    #if (defined(CHRONOLOG_PLATFORM_ARDUINO) || defined(CHRONOLOG_PLATFORM_ESP_IDF)) && defined(CHRONOLOG_ESP)
       struct timeval tv;
       gettimeofday(&tv, NULL);
       struct tm timeinfo;
@@ -205,7 +205,7 @@ private:
       uint32_t ms = HAL_GetTick();
       snprintf(time_buf, sizeof(time_buf), "%02lu:%02lu:%02lu",
         (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
-    #elif (defined(CHRONOLOG_PLATFORM_ARDUINO) && !defined(CHRONOLOG_ESP_FREERTOS))
+    #elif (defined(CHRONOLOG_PLATFORM_ARDUINO) && !defined(CHRONOLOG_ESP))
       unsigned long ms = millis();
       snprintf(time_buf, sizeof(time_buf), "%02lu:%02lu:%02lu",
         (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
@@ -213,9 +213,15 @@ private:
 
     const char* taskName = getCurrentTaskName();
 
-    #if defined(CHRONOLOG_PLATFORM_ARDUINO)
+    #if defined(CHRONOLOG_PLATFORM_ARDUINO) && defined(CHRONOLOG_ESP)
       Serial.printf("%s | %-15s | %s%-8s%s | %-16s | ",
         time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
+    #elif defined(CHRONOLOG_PLATFORM_ARDUINO) && !defined(CHRONOLOG_ESP)
+      char line_buf[96];
+      snprintf(line_buf, sizeof(line_buf),
+               "%s | %-15s | %s%-8s%s | %-16s | ",
+               time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
+      Serial.print(line_buf);
     #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
       printf("%s | %-15s | %s%-8s%s | %-16s | ",
         time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
