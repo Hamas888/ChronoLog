@@ -53,8 +53,11 @@
 
 #if defined(CHRONOLOG_PLATFORM_ARDUINO)
   #include <Arduino.h>
+#if defined(ESP32) || defined(ESP8266)
+  #define CHRONOLOG_ESP_FREERTOS
   #include <freertos/task.h>
   #include <freertos/FreeRTOS.h>
+#endif
 #elif defined(CHRONOLOG_PLATFORM_ESP_IDF)
   #include <time.h>
   #include <esp_log.h>
@@ -80,7 +83,7 @@
 #if defined(osCMSIS) || defined(FREERTOS)
   #define CHRONOLOG_STM32_FREERTOS
   #include "cmsis_os.h"
-#endif // CHRONOLOG_STM32_FREERTOS
+#endif
 #endif
 
 
@@ -178,7 +181,7 @@ private:
     return "MainTask";
   #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
     return k_thread_name_get(k_current_get());
-  #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_ARDUINO)
+  #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || (defined(CHRONOLOG_PLATFORM_ARDUINO) && defined(CHRONOLOG_ESP_FREERTOS))
     return pcTaskGetName(NULL);
   #else
     return "MainTask";
