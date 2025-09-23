@@ -191,7 +191,7 @@ private:
   void print(const char* levelStr, const char* color, const char* fmt, va_list args) const {
     char time_buf[16];
 
-    #if defined(CHRONOLOG_PLATFORM_ARDUINO) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+    #if (defined(CHRONOLOG_PLATFORM_ARDUINO) || defined(CHRONOLOG_PLATFORM_ESP_IDF)) && defined(CHRONOLOG_ESP_FREERTOS)
       struct timeval tv;
       gettimeofday(&tv, NULL);
       struct tm timeinfo;
@@ -203,6 +203,10 @@ private:
         (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
     #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
       uint32_t ms = HAL_GetTick();
+      snprintf(time_buf, sizeof(time_buf), "%02lu:%02lu:%02lu",
+        (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
+    #elif (defined(CHRONOLOG_PLATFORM_ARDUINO) && !defined(CHRONOLOG_ESP_FREERTOS))
+      unsigned long ms = millis();
       snprintf(time_buf, sizeof(time_buf), "%02lu:%02lu:%02lu",
         (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
     #endif
