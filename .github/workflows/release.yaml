@@ -38,7 +38,7 @@ jobs:
       # Step 4: Create a zip file named with the version
       - name: Create zip archive
         run: |
-          ZIP_NAME="OTA-Dash_v${{ steps.get_version.outputs.version }}.zip"
+          ZIP_NAME="ChronoLog_v${{ steps.get_version.outputs.version }}.zip"
           zip -r "$ZIP_NAME" src examples library.json README.md
           echo "zip_name=$ZIP_NAME" >> $GITHUB_ENV
 
@@ -49,7 +49,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: v${{ steps.get_version.outputs.version }}
           name: Release v${{ steps.get_version.outputs.version }}
-          body: OTA-Dash Library version v${{ steps.get_version.outputs.version }}
+          body: ChronoLog Library version v${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
           artifacts: ${{ env.zip_name }}
