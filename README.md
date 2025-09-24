@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/Version-1.0.0-green.svg)](https://github.com/Hamas888/ChronoLog)
-[![Platform](https://img.shields.io/badge/Platform-ESP32%20|%20STM32%20|%20nRF52-orange.svg)](https://github.com/Hamas888/ChronoLog)
+[![Platform](https://img.shields.io/badge/Platform-ARDUINO%20|%20ESP32%20|%20STM32%20|%20nRF52-orange.svg)](https://github.com/Hamas888/ChronoLog)
 
 A **cross-platform real-time logging library** for embedded systems that provides structured, colorized, and timestamped logging with automatic platform detection. ChronoLog seamlessly adapts to different embedded environments including Arduino, ESP-IDF, nRF Connect SDK (Zephyr), and STM32 HAL with or without RTOS support.
 
