@@ -1,5 +1,7 @@
 # ChronoLog/CMakeLists.txt
 
+set(CHRONOLOG_VERSION 1.0.0)
+
 # Check if we're building with Zephyr
 if(DEFINED ZEPHYR_BASE)
 
