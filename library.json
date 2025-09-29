@@ -10,7 +10,8 @@
     "platformio",
     "esp32",
     "stm32",
-    "nrf52"
+    "nrf52",
+    "arduino"
   ],
   "authors": [
     {
@@ -25,7 +26,7 @@
     "url": "https://github.com/Hamas888/ChronoLog.git"
   },
   "frameworks": ["arduino", "espidf"],
-  "platforms": ["espressif32"],
+  "platforms": ["atmelavr","espressif32", "ststm32", "nordicnrf52"],
   "build": {
     "flags": [
       "-std=gnu++17"
@@ -37,7 +38,11 @@
   "license": "MIT",
   "homepage": "https://github.com/Hamas888/ChronoLog",
   "examples": [
-    "examples"
+    "examples/ESP-IDF",
+    "examples/STM32Cube",
+    "examples/PlatformIo",
+    "examples/ArduinoIDE",
+    "examples/NRF Connect SDK"
   ],
   "export": {
     "include": [
