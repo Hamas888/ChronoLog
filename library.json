@@ -1,6 +1,6 @@
 {
   "name": "ChronoLog",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cross-platform real-time logger for embedded systems (ESP32, STM32, nRF52)",
   "keywords": [
     "logger",
@@ -38,11 +38,16 @@
   "license": "MIT",
   "homepage": "https://github.com/Hamas888/ChronoLog",
   "examples": [
-    "examples/ESP-IDF",
-    "examples/STM32Cube",
-    "examples/PlatformIo",
-    "examples/ArduinoIDE",
-    "examples/NRF Connect SDK"
+    "examples/ESP-IDF/ESP32-C6 Logging/main/main.cpp",
+    "examples/ESP-IDF/ESP32-S3 Logging/main/main.cpp",
+    "examples/STM32Cube/STM32_NucleoL010RB_Logging/Core/Src/main.cpp",
+    "examples/STM32Cube/STM32_NucleoL010RB_Logging_RTOS/Core/Src/main.cpp",
+    "examples/PlatformIO/Arduino/ESP32-C6 Logging/src/main.cpp",
+    "examples/PlatformIO/Arduino/ESP32-S3 Logging/src/main.cpp",
+    "examples/PlatformIO/ESP-IDF/ESP32-C6 Logging/src/main.cpp",
+    "examples/PlatformIO/ESP-IDF/ESP32-S3 Logging/src/main.cpp",
+    "examples/ArduinoIDE/ArduinoUno-Logging/ArduinoUno-Logging.ino",
+    "examples/NRF Connect SDK/nRF52832_Logging/src/main.cpp"
   ],
   "export": {
     "include": [
