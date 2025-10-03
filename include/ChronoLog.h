@@ -87,15 +87,24 @@
 #endif
 
 
-#define CHRONOLOG_MODE          1
-#define CHRONOLOG_BUFFER_LEN    256
+#define CHRONOLOG_MODE          1                           // Set to 0 to disable logging
+#define CHRONOLOG_BUFFER_LEN    100                         // Buffer length for formatted messages (increase if needed)
+#define CHRONOLOG_COLOR_ENABLE  1                           // Set to 0 to disable colored output (if not supported by terminal)
+#define CHRONOLOG_PRO_FEATURES  0                           // Set to 1 to enable Pro features (e.g. progress start/stop)
 
-#define CHRONOLOG_COLOR_INFO    "\033[92m"
-#define CHRONOLOG_COLOR_WARN    "\033[93m"
-#define CHRONOLOG_COLOR_ERROR   "\033[91m"
-#define CHRONOLOG_COLOR_RESET   "\033[0m"
-#define CHRONOLOG_COLOR_DEBUG   "\033[94m"
-#define CHRONOLOG_COLOR_FATAL   "\033[95m"
+#if CHRONOLOG_COLOR_ENABLE
+#define CHRONOLOG_COLOR_INFO    "\033[3m\033[92m"           // Italic + Green
+#define CHRONOLOG_COLOR_WARN    "\033[3m\033[93m"           // Italic + Yellow
+#define CHRONOLOG_COLOR_ERROR   "\033[3m\033[91m"           // Italic + Red
+#define CHRONOLOG_COLOR_DEBUG   "\033[3m\033[94m"           // Italic + Blue
+#define CHRONOLOG_COLOR_FATAL   "\033[3m\033[95m"           // Italic + Magenta
+#define CHRONOLOG_COLOR_RESET   "\033[0m"                   // Reset
+
+#if CHRONOLOG_PRO_FEATURES
+  #define CHRONOLOG_COLOR_PROGF   "\033[3m\033[96m"         // Italic + Cyan
+  #define CHRONOLOG_COLOR_PROGS   "\033[3m\033[38;5;208m"   // Italic + Orange
+#endif // CHRONOLOG_PRO_FEATURES
+#endif // CHRONOLOG_COLOR_ENABLE
 
 enum ChronoLogLevel {
   CHRONOLOG_LEVEL_NONE,
@@ -103,7 +112,10 @@ enum ChronoLogLevel {
   CHRONOLOG_LEVEL_ERROR,
   CHRONOLOG_LEVEL_WARN,
   CHRONOLOG_LEVEL_INFO,
-  CHRONOLOG_LEVEL_DEBUG
+  CHRONOLOG_LEVEL_DEBUG,
+  #if CHRONOLOG_PRO_FEATURES
+    CHRONOLOG_LEVEL_PRO_FEATURES
+  #endif // CHRONOLOG_PRO_FEATURES
 };
 
 #if CHRONOLOG_MODE
@@ -164,6 +176,31 @@ public:
     }
   }
 
+  #if CHRONOLOG_PRO_FEATURES
+    void progress(uint32_t current, uint32_t total, const char* title) const {
+      if (chronoLogLevel >= CHRONOLOG_LEVEL_PRO_FEATURES) {
+        if(current > total) current = total;
+        if(total == 0) total = 1; // Prevent division by zero
+        if(current < total) {
+          printProgress("PROGRESS", CHRONOLOG_COLOR_PROGS, current, total, title);
+        } else {
+          printProgress("PROGRESS", CHRONOLOG_COLOR_PROGF, current, total, title);
+          // Add newline when progress is complete
+          #if defined(CHRONOLOG_PLATFORM_ARDUINO)
+            Serial.println();
+          #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+            printf("\n");
+          #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+            if (uartHandler) {
+              const char* newline = "\n";
+              HAL_UART_Transmit(uartHandler, (uint8_t*)newline, strlen(newline), HAL_MAX_DELAY);
+            }
+          #endif
+        }
+      }
+    }
+  #endif // CHRONOLOG_PRO_FEATURES
+
 private:
   const char* name;
   ChronoLogLevel chronoLogLevel;
@@ -188,28 +225,31 @@ private:
   #endif
   }
 
-  void print(const char* levelStr, const char* color, const char* fmt, va_list args) const {
-    char time_buf[16];
-
+  void getTimeStamp(char* buffer, size_t len) const {
     #if (defined(CHRONOLOG_PLATFORM_ARDUINO) || defined(CHRONOLOG_PLATFORM_ESP_IDF)) && defined(CHRONOLOG_ESP)
       struct timeval tv;
       gettimeofday(&tv, NULL);
       struct tm timeinfo;
       localtime_r(&tv.tv_sec, &timeinfo);
-      snprintf(time_buf, sizeof(time_buf), "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+      snprintf(buffer, len, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
       uint64_t ms = k_uptime_get();
-      snprintf(time_buf, sizeof(time_buf), "%02llu:%02llu:%02llu",
+      snprintf(buffer, len, "%02llu:%02llu:%02llu",
         (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
     #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
       uint32_t ms = HAL_GetTick();
-      snprintf(time_buf, sizeof(time_buf), "%02lu:%02lu:%02lu",
+      snprintf(buffer, len, "%02lu:%02lu:%02lu",
         (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
     #elif (defined(CHRONOLOG_PLATFORM_ARDUINO) && !defined(CHRONOLOG_ESP))
       unsigned long ms = millis();
-      snprintf(time_buf, sizeof(time_buf), "%02lu:%02lu:%02lu",
+      snprintf(buffer, len, "%02lu:%02lu:%02lu",
         (ms / 3600000) % 24, (ms / 60000) % 60, (ms / 1000) % 60);
     #endif
+  }
+
+  void printInfo(const char* levelStr, const char* color) const {
+    char time_buf[16];
+    getTimeStamp(time_buf, 16);
 
     const char* taskName = getCurrentTaskName();
 
@@ -233,7 +273,10 @@ private:
       if (!uartHandler) return;
       HAL_UART_Transmit(uartHandler, (uint8_t*)line_buf, strlen(line_buf), HAL_MAX_DELAY);
     #endif
+  }
 
+  void print(const char* levelStr, const char* color, const char* fmt, va_list args) const {
+    printInfo(levelStr, color);
     char msg_buf[CHRONOLOG_BUFFER_LEN];
     va_list args_copy;
     va_copy(args_copy, args);
@@ -289,6 +332,43 @@ private:
       HAL_UART_Transmit(uartHandler, (uint8_t*)newline, strlen(newline), HAL_MAX_DELAY);
     #endif
   }
+
+  #if CHRONOLOG_PRO_FEATURES
+    void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const {
+      printInfo(levelStr, color);
+      uint8_t percent = (current * 100) / total;
+      char prog_buf[100];
+
+      const uint8_t bar_width = 20;
+      uint8_t filled_chars = (percent * bar_width) / 100;
+      
+      snprintf(prog_buf, sizeof(prog_buf), "%s: %3u%% (%lu/%lu) [", title, percent, current, total);
+      
+      for (uint8_t i = 0; i < bar_width; i++) {
+        if (i < filled_chars) {
+          strncat(prog_buf, "=", sizeof(prog_buf) - strlen(prog_buf) - 1);
+        } else {
+          strncat(prog_buf, "-", sizeof(prog_buf) - strlen(prog_buf) - 1);
+        }
+      }
+      strncat(prog_buf, "]", sizeof(prog_buf) - strlen(prog_buf) - 1);
+
+      // Output the progress bar
+      #if defined(CHRONOLOG_PLATFORM_ARDUINO)
+        Serial.print(prog_buf);
+        Serial.print("\r");  // Carriage return to overwrite same line
+        Serial.flush();      // Ensure output is sent immediately
+      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+        printf("%s\r", prog_buf);  // Carriage return to overwrite same line
+        fflush(stdout);            // Ensure output is sent immediately
+      #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+        if (!uartHandler) return;
+        HAL_UART_Transmit(uartHandler, (uint8_t*)prog_buf, strlen(prog_buf), HAL_MAX_DELAY);
+        const char* carriage_return = "\r";
+        HAL_UART_Transmit(uartHandler, (uint8_t*)carriage_return, strlen(carriage_return), HAL_MAX_DELAY);
+      #endif
+    }
+  #endif
 };
 
 #else  // CHRONOLOG_MODE
@@ -302,6 +382,10 @@ public:
   void debug(const char* fmt, ...) const {}
   void error(const char* fmt, ...) const {}
   void fatal(const char* fmt, ...) const {}
+
+  #if CHRONOLOG_PRO_FEATURES
+    void progress(uint32_t current, uint32_t total, const char* title) const {}
+  #endif // CHRONOLOG_PRO_FEATURES
 };
 
 #endif // CHRONOLOG_MODE
