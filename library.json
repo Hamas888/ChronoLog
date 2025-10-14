@@ -1,6 +1,6 @@
 {
   "name": "ChronoLog",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Cross-platform real-time logger for embedded systems (ESP32, STM32, nRF52)",
   "keywords": [
     "logger",
@@ -11,7 +11,13 @@
     "esp32",
     "stm32",
     "nrf52",
-    "arduino"
+    "arduino",
+    "thread safe",
+    "chronolog",
+    "chrono",
+    "logger",
+    "logging",
+    "log"
   ],
   "authors": [
     {
@@ -47,7 +53,9 @@
     "examples/PlatformIO/ESP-IDF/ESP32-C6 Logging/src/main.cpp",
     "examples/PlatformIO/ESP-IDF/ESP32-S3 Logging/src/main.cpp",
     "examples/ArduinoIDE/ArduinoUno-Logging/ArduinoUno-Logging.ino",
-    "examples/NRF Connect SDK/nRF52832_Logging/src/main.cpp"
+    "examples/NRF Connect SDK/nRF52832_Logging/src/main.cpp",
+    "examples/Pro Features/ESP32-S3 Progress Bar/src/main.cpp",
+    "examples/ThreadSafe/ESP32-S3 Thread Safety/src/main.cpp"
   ],
   "export": {
     "include": [

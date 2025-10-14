@@ -1,5 +1,5 @@
 # ChronoLog/idf_component.yml
 
-version: 1.0.2
+version: 1.0.3
 description: "A chrono logging component for ESP-IDF"
 url: "https://github.com/Hamas888/ChronoLog"

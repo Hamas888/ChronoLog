@@ -1,0 +1,4 @@
+.vscode/
+CMakeFiles/
+CMakeCache.text
+test/

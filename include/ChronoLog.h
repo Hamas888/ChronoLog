@@ -2,9 +2,9 @@
  ============================================================================================================================================
  * File:        ChronoLog.h
  * Author:      Hamas Saeed
- * Version:     Rev_1.0.2
+ * Version:     Rev_1.0.3
  * Date:        Sep 20 2025
- * Brief:       This file provides Debuging / Logging functionalities for embedded systems (Arduino, ESP-IDF, Zephyr, STM32 HAL).
+ * Brief:       This file provides Debuging / Logging functionalities for embedded & Desktop systems (Arduino, ESP-IDF, Zephyr, STM32 HAL).
  ============================================================================================================================================
  * License: 
  * MIT License
@@ -67,6 +67,15 @@
     #include "cmsis_os.h"
   #endif
   #define CHRONOLOG_PLATFORM_STM32_HAL
+#elif defined(__linux__) || defined(_WIN32) || defined(__APPLE__)
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <stdarg.h>
+  #include <string.h>
+  #include <time.h>
+  #include <mutex>
+  #include <thread>
+  #define CHRONOLOG_PLATFORM_DESKTOP
 #endif // Platform detection
 
 #ifndef CHRONOLOG_MODE
@@ -120,7 +129,9 @@ enum ChronoLogLevel {
 };
 
 #if CHRONOLOG_THREAD_SAFE
-  #if defined(CHRONOLOG_PLATFORM_ZEPHYR)
+  #if defined(CHRONOLOG_PLATFORM_DESKTOP)
+    static std::mutex chronoLogMutex;
+  #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
     static struct k_mutex chronoLogMutex;
   #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
     #if defined(CHRONOLOG_STM32_FREERTOS)
@@ -195,7 +206,7 @@ public:
           printProgress("PROGRESS", CHRONOLOG_COLOR_PROGF, current, total, title);
           #if defined(CHRONOLOG_PLATFORM_ARDUINO)
             Serial.println();
-          #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+          #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)
             printf("\n");
           #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
             if (uartHandler) {
@@ -224,6 +235,8 @@ private:
         if (chronoLogMutex) xSemaphoreTake(chronoLogMutex, portMAX_DELAY);
       #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
         k_mutex_lock(&chronoLogMutex, K_FOREVER);
+      #elif defined(CHRONOLOG_PLATFORM_DESKTOP)
+        chronoLogMutex.lock();
       #endif
     }
 
@@ -234,6 +247,8 @@ private:
         if (chronoLogMutex) xSemaphoreGive(chronoLogMutex);
       #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
         k_mutex_unlock(&chronoLogMutex);
+      #elif defined(CHRONOLOG_PLATFORM_DESKTOP)
+        chronoLogMutex.unlock();
       #endif
     }
   #endif // CHRONOLOG_THREAD_SAFE
@@ -245,6 +260,11 @@ private:
       return (name != nullptr) ? name : "MainTask";
     }
     return "MainTask";
+  #elif defined(CHRONOLOG_PLATFORM_DESKTOP)
+    static thread_local char threadName[32];
+    snprintf(threadName, sizeof(threadName), "Thread-%zu",
+            std::hash<std::thread::id>{}(std::this_thread::get_id()) % 1000);
+    return threadName;
   #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
     return k_thread_name_get(k_current_get());
   #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || (defined(CHRONOLOG_PLATFORM_ARDUINO) && defined(CHRONOLOG_ESP))
@@ -262,6 +282,10 @@ private:
       localtime_r(&tv.tv_sec, &timeinfo);
       snprintf(buffer, len, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
       return;
+    #elif defined(CHRONOLOG_PLATFORM_DESKTOP)
+      time_t now = time(NULL);
+      struct tm *t = localtime(&now);
+      snprintf(buffer, len, "%02d:%02d:%02d", t->tm_hour, t->tm_min, t->tm_sec);
     #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
       uint64_t ms = k_uptime_get();
       snprintf(buffer, len, "%02llu:%02llu:%02llu",
@@ -292,7 +316,7 @@ private:
                "%s | %-15s | %s%-8s%s | %-16s | ",
                time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
       Serial.print(line_buf);
-    #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+    #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)
       printf("%s | %-15s | %s%-8s%s | %-16s | ",
         time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName);
     #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
@@ -320,7 +344,7 @@ private:
     if (len < CHRONOLOG_BUFFER_LEN) {
       #if defined(CHRONOLOG_PLATFORM_ARDUINO)
         Serial.print(msg_buf);
-      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)  || defined(CHRONOLOG_PLATFORM_DESKTOP)
         printf("%s", msg_buf);
       #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
         if (!uartHandler) return;
@@ -335,7 +359,7 @@ private:
 
         #if defined(CHRONOLOG_PLATFORM_ARDUINO)
           Serial.print(dynamic_buf);
-        #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+        #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)  
           printf("%s", dynamic_buf);
         #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
           if (!uartHandler) return;
@@ -346,7 +370,7 @@ private:
       } else {
         #if defined(CHRONOLOG_PLATFORM_ARDUINO)
           Serial.print("[Log too long: memory error]");
-        #elif defined(DEBUG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+        #elif defined(DEBUG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)
           printf("[Log too long: memory error]");
         #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
           if (!uartHandler) return;
@@ -358,7 +382,7 @@ private:
 
     #if defined(CHRONOLOG_PLATFORM_ARDUINO)
       Serial.println();
-    #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+    #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)
       printf("\n");
     #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
       if (!uartHandler) return;
@@ -372,7 +396,7 @@ private:
   }
 
   #if CHRONOLOG_PRO_FEATURES
-    void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const {
+    void printProgress(const char* levelStr, const char* color, uint64_t current, uint64_t total, const char* title) const {
       #if CHRONOLOG_THREAD_SAFE
         threadSafeLock();
       #endif
@@ -399,7 +423,7 @@ private:
         Serial.print(prog_buf);
         Serial.print("\r");  // Carriage return to overwrite same line
         Serial.flush();      // Ensure output is sent immediately
-      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
+      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)
         printf("%s\r", prog_buf);  // Carriage return to overwrite same line
         fflush(stdout);            // Ensure output is sent immediately
       #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
