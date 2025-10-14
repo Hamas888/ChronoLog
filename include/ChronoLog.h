@@ -1,71 +1,51 @@
 /*
- ====================================================================================================
+ ============================================================================================================================================
  * File:        ChronoLog.h
  * Author:      Hamas Saeed
- * Version:     Rev_1.0.0
+ * Version:     Rev_1.0.2
  * Date:        Sep 20 2025
- * Brief:       This file provides Debuging functionalities
- * 
- ====================================================================================================
+ * Brief:       This file provides Debuging / Logging functionalities for embedded systems (Arduino, ESP-IDF, Zephyr, STM32 HAL).
+ ============================================================================================================================================
  * License: 
  * MIT License
  * 
  * Copyright (c) 2025 Hamas Saeed
  * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do 
+ * so, subject to the following conditions:
  * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE 
+ * FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
  * For any inquiries, contact Hamas Saeed at hamasaeed@gmail.com
- *
- ====================================================================================================
+ ============================================================================================================================================
  */
 
 #ifndef CHRONOLOG_H
 #define CHRONOLOG_H
 
-#if defined(ARDUINO)                                                                                       // Platform detection
+#if defined(ARDUINO)                                        // Platform detection
+  #include <Arduino.h>
+  #if defined(ESP32)
+    #define CHRONOLOG_ESP
+    #include <freertos/task.h>
+    #include <freertos/FreeRTOS.h>
+  #endif
   #define CHRONOLOG_PLATFORM_ARDUINO
 #elif defined(ESP_PLATFORM)
-  #define CHRONOLOG_PLATFORM_ESP_IDF
-#elif defined(__ZEPHYR__)
-  #define CHRONOLOG_PLATFORM_ZEPHYR
-#elif defined(STM32F0) || defined(STM32F1) || defined(STM32F3) || defined(STM32F4) || \
-      defined(STM32F7) || defined(STM32G0) || defined(STM32G4) || defined(STM32H7) || \
-      defined(STM32L0) || defined(STM32L1) || defined(STM32L4) || defined(STM32L5) || \
-      defined(STM32WB) || defined(STM32WL)
-  #define CHRONOLOG_PLATFORM_STM32_HAL
-#endif
-
-#if defined(CHRONOLOG_PLATFORM_ARDUINO)
-  #include <Arduino.h>
-#if defined(ESP32) || defined(ESP8266)
-  #define CHRONOLOG_ESP
-  #include <freertos/task.h>
-  #include <freertos/FreeRTOS.h>
-#endif
-#elif defined(CHRONOLOG_PLATFORM_ESP_IDF)
   #include <time.h>
   #include <esp_log.h>
   #include <sys/time.h>
   #include <freertos/task.h>
   #include <freertos/FreeRTOS.h>
-#elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
-  extern "C" {
+  #define CHRONOLOG_PLATFORM_ESP_IDF
+#elif defined(__ZEPHYR__)
     #include <time.h>
     #include <stdio.h>
     #include <stdlib.h>
@@ -73,24 +53,45 @@
     #include <string.h>
     #include <zephyr/kernel.h>
     #include <zephyr/sys/printk.h>
-  }
-#elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+  #define CHRONOLOG_PLATFORM_ZEPHYR
+#elif defined(STM32F0) || defined(STM32F1) || defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || \
+      defined(STM32G0) || defined(STM32G4) || defined(STM32H7) || defined(STM32L0) || defined(STM32L1) || \
+      defined(STM32L4) || defined(STM32L5) || defined(STM32WB) || defined(STM32WL)
   #include "main.h"
   #include <stdio.h>
   #include <stdlib.h>
   #include <stdarg.h>
   #include <string.h>
-#if defined(osCMSIS) || defined(FREERTOS)
-  #define CHRONOLOG_STM32_FREERTOS
-  #include "cmsis_os.h"
-#endif
+  #if defined(osCMSIS) || defined(FREERTOS)
+    #define CHRONOLOG_STM32_FREERTOS
+    #include "cmsis_os.h"
+  #endif
+  #define CHRONOLOG_PLATFORM_STM32_HAL
+#endif // Platform detection
+
+#ifndef CHRONOLOG_MODE
+  #define CHRONOLOG_MODE          1                         // Set to 0 to disable logging
+#endif // CHRONOLOG_MODE
+
+#ifndef CHRONOLOG_BUFFER_LEN
+  #define CHRONOLOG_BUFFER_LEN    100                       // Buffer length for formatted messages (increase if needed)
+#endif // CHRONOLOG_BUFFER_LEN
+
+#ifndef CHRONOLOG_THREAD_SAFE
+  #define CHRONOLOG_THREAD_SAFE   1                         // Set to 0 to disable thread safety (if not using RTOS)
+#endif // CHRONOLOG_THREAD_SAFE
+
+#ifndef CHRONOLOG_DEFAULT_LEVEL
+#define CHRONOLOG_DEFAULT_LEVEL   CHRONOLOG_LEVEL_DEBUG     // Default log level (can be overridden per instance)
 #endif
 
+#ifndef CHRONOLOG_COLOR_ENABLE
+  #define CHRONOLOG_COLOR_ENABLE  1                         // Set to 0 to disable colored output (if not supported by terminal)
+#endif // CHRONOLOG_COLOR_ENABLE
 
-#define CHRONOLOG_MODE          1                           // Set to 0 to disable logging
-#define CHRONOLOG_BUFFER_LEN    100                         // Buffer length for formatted messages (increase if needed)
-#define CHRONOLOG_COLOR_ENABLE  1                           // Set to 0 to disable colored output (if not supported by terminal)
-#define CHRONOLOG_PRO_FEATURES  0                           // Set to 1 to enable Pro features (e.g. progress start/stop)
+#ifndef CHRONOLOG_PRO_FEATURES
+  #define CHRONOLOG_PRO_FEATURES  0                         // Set to 1 to enable Pro features (e.g. progress start/stop)
+#endif // CHRONOLOG_PRO_FEATURES
 
 #if CHRONOLOG_COLOR_ENABLE
 #define CHRONOLOG_COLOR_INFO    "\033[3m\033[92m"           // Italic + Green
@@ -118,74 +119,79 @@ enum ChronoLogLevel {
   #endif // CHRONOLOG_PRO_FEATURES
 };
 
+#if CHRONOLOG_THREAD_SAFE
+  #if defined(CHRONOLOG_PLATFORM_ZEPHYR)
+    static struct k_mutex chronoLogMutex;
+  #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+    #if defined(CHRONOLOG_STM32_FREERTOS)
+      static SemaphoreHandle_t chronoLogMutex = nullptr;
+    #endif
+  #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_ESP)
+    static SemaphoreHandle_t chronoLogMutex = nullptr;
+  #endif
+#endif // CHRONOLOG_THREAD_SAFE
+
 #if CHRONOLOG_MODE
 
 class ChronoLogger {
 public:
-  constexpr ChronoLogger(const char* moduleName, ChronoLogLevel level = CHRONOLOG_LEVEL_DEBUG)
-    : name(moduleName), chronoLogLevel(level) {}
+  ChronoLogger(const char* moduleName, ChronoLogLevel level = CHRONOLOG_DEFAULT_LEVEL)
+    : name(moduleName), chronoLogLevel(level) {
+    #if CHRONOLOG_THREAD_SAFE
+      #if defined(CHRONOLOG_PLATFORM_STM32_HAL) && defined(CHRONOLOG_STM32_FREERTOS)
+        if (chronoLogMutex == nullptr)  chronoLogMutex = xSemaphoreCreateMutex();
+      #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_ESP)
+        if (chronoLogMutex == nullptr) {
+          taskENTER_CRITICAL();
+          if (chronoLogMutex == nullptr)
+            chronoLogMutex = xSemaphoreCreateMutex();
+          taskEXIT_CRITICAL();
+        }
+      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
+        static bool initialized = false;
+        if (!initialized) {
+          k_mutex_init(&chronoLogMutex);
+          initialized = true;
+        }
+      #endif
+    #endif
+  }
 
   void setLevel(ChronoLogLevel level)               { chronoLogLevel = level; }
 
 #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
   void setUartHandler(UART_HandleTypeDef* handler)  { uartHandler = handler;  }
-#endif
+#endif // CHRONOLOG_PLATFORM_STM32_HAL
 
-  void debug(const char* fmt, ...) const {
-    if (chronoLogLevel >= CHRONOLOG_LEVEL_DEBUG) {
-      va_list args;
-      va_start(args, fmt);
-      print("DEBUG", CHRONOLOG_COLOR_DEBUG, fmt, args);
-      va_end(args);
-    }
-  }
+  void info(const char* fmt, ...) const { if (chronoLogLevel >= CHRONOLOG_LEVEL_INFO) {
+    va_list args;   va_start(args, fmt);  print("INFO", CHRONOLOG_COLOR_INFO, fmt, args);     va_end(args);
+  }}
 
-  void info(const char* fmt, ...) const {
-    if (chronoLogLevel >= CHRONOLOG_LEVEL_INFO) {
-      va_list args;
-      va_start(args, fmt);
-      print("INFO", CHRONOLOG_COLOR_INFO, fmt, args);
-      va_end(args);
-    }
-  }
+  void warn(const char* fmt, ...) const { if (chronoLogLevel >= CHRONOLOG_LEVEL_WARN) {
+    va_list args;   va_start(args, fmt);  print("WARNING", CHRONOLOG_COLOR_WARN, fmt, args);  va_end(args);
+  }}
 
-  void warn(const char* fmt, ...) const {
-    if (chronoLogLevel >= CHRONOLOG_LEVEL_WARN) {
-      va_list args;
-      va_start(args, fmt);
-      print("WARNING", CHRONOLOG_COLOR_WARN, fmt, args);
-      va_end(args);
-    }
-  }
+  void debug(const char* fmt, ...) const { if (chronoLogLevel >= CHRONOLOG_LEVEL_DEBUG) { 
+    va_list args;   va_start(args, fmt);  print("DEBUG", CHRONOLOG_COLOR_DEBUG, fmt, args);   va_end(args);
+  }}
 
-  void error(const char* fmt, ...) const {
-    if (chronoLogLevel >= CHRONOLOG_LEVEL_ERROR) {
-      va_list args;
-      va_start(args, fmt);
-      print("ERROR", CHRONOLOG_COLOR_ERROR, fmt, args);
-      va_end(args);
-    }
-  }
+  void error(const char* fmt, ...) const { if (chronoLogLevel >= CHRONOLOG_LEVEL_ERROR) {
+    va_list args;   va_start(args, fmt);  print("ERROR", CHRONOLOG_COLOR_ERROR, fmt, args);   va_end(args);
+  }}
 
-  void fatal(const char* fmt, ...) const {
-    if (chronoLogLevel >= CHRONOLOG_LEVEL_FATAL) {
-      va_list args;
-      va_start(args, fmt);
-      print("FATAL", CHRONOLOG_COLOR_FATAL, fmt, args);
-      va_end(args);
-    }
-  }
+  void fatal(const char* fmt, ...) const { if (chronoLogLevel >= CHRONOLOG_LEVEL_FATAL) {
+    va_list args;   va_start(args, fmt);  print("FATAL", CHRONOLOG_COLOR_FATAL, fmt, args);   va_end(args);
+  }}
 
   #if CHRONOLOG_PRO_FEATURES
     void progress(uint32_t current, uint32_t total, const char* title) const {
       if (chronoLogLevel >= CHRONOLOG_LEVEL_PRO_FEATURES) {
         if(current > total) current = total;
         if(total == 0) total = 1; // Prevent division by zero
-        if(current < total) {
+        if(current < total) { 
           printProgress("PROGRESS", CHRONOLOG_COLOR_PROGS, current, total, title);
-        } else {
+        } else { 
           printProgress("PROGRESS", CHRONOLOG_COLOR_PROGF, current, total, title);
-          // Add newline when progress is complete
           #if defined(CHRONOLOG_PLATFORM_ARDUINO)
             Serial.println();
           #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF)
@@ -202,12 +208,34 @@ public:
   #endif // CHRONOLOG_PRO_FEATURES
 
 private:
-  const char* name;
-  ChronoLogLevel chronoLogLevel;
+  const char*           name;
+  ChronoLogLevel        chronoLogLevel;
 
-#if defined(CHRONOLOG_PLATFORM_STM32_HAL)
-  UART_HandleTypeDef* uartHandler = nullptr;
-#endif
+  #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
+    UART_HandleTypeDef* uartHandler = nullptr;
+  #endif
+
+  #if CHRONOLOG_THREAD_SAFE
+    void threadSafeLock() {
+      #if defined(CHRONOLOG_PLATFORM_STM32_HAL) && defined(CHRONOLOG_STM32_FREERTOS)
+        if (chronoLogMutex) xSemaphoreTake(chronoLogMutex, portMAX_DELAY);
+      #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_ESP)
+        if (chronoLogMutex) xSemaphoreTake(chronoLogMutex, portMAX_DELAY);
+      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
+        k_mutex_lock(&chronoLogMutex, K_FOREVER);
+      #endif
+    }
+
+    void threadSafeUnlock() {
+      #if defined(CHRONOLOG_PLATFORM_STM32_HAL) && defined(CHRONOLOG_STM32_FREERTOS)
+        if (chronoLogMutex) xSemaphoreGive(chronoLogMutex);
+      #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_ESP)
+        if (chronoLogMutex) xSemaphoreGive(chronoLogMutex);
+      #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
+        k_mutex_unlock(&chronoLogMutex);
+      #endif
+    }
+  #endif // CHRONOLOG_THREAD_SAFE
 
   static const char* getCurrentTaskName() {
   #if defined(CHRONOLOG_PLATFORM_STM32_HAL) && defined(CHRONOLOG_STM32_FREERTOS)
@@ -232,6 +260,7 @@ private:
       struct tm timeinfo;
       localtime_r(&tv.tv_sec, &timeinfo);
       snprintf(buffer, len, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+      return;
     #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
       uint64_t ms = k_uptime_get();
       snprintf(buffer, len, "%02llu:%02llu:%02llu",
@@ -276,6 +305,10 @@ private:
   }
 
   void print(const char* levelStr, const char* color, const char* fmt, va_list args) const {
+    #if CHRONOLOG_THREAD_SAFE
+      threadSafeLock();
+    #endif
+
     printInfo(levelStr, color);
     char msg_buf[CHRONOLOG_BUFFER_LEN];
     va_list args_copy;
@@ -331,10 +364,17 @@ private:
       const char* newline = "\n";
       HAL_UART_Transmit(uartHandler, (uint8_t*)newline, strlen(newline), HAL_MAX_DELAY);
     #endif
+
+    #if CHRONOLOG_THREAD_SAFE
+      threadSafeUnlock();
+    #endif
   }
 
   #if CHRONOLOG_PRO_FEATURES
     void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const {
+      #if CHRONOLOG_THREAD_SAFE
+        threadSafeLock();
+      #endif
       printInfo(levelStr, color);
       uint8_t percent = (current * 100) / total;
       char prog_buf[100];
@@ -366,6 +406,9 @@ private:
         HAL_UART_Transmit(uartHandler, (uint8_t*)prog_buf, strlen(prog_buf), HAL_MAX_DELAY);
         const char* carriage_return = "\r";
         HAL_UART_Transmit(uartHandler, (uint8_t*)carriage_return, strlen(carriage_return), HAL_MAX_DELAY);
+      #endif
+      #if CHRONOLOG_THREAD_SAFE
+        threadSafeUnlock();
       #endif
     }
   #endif
