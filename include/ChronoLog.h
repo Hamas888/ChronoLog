@@ -141,11 +141,12 @@ public:
       #if defined(CHRONOLOG_PLATFORM_STM32_HAL) && defined(CHRONOLOG_STM32_FREERTOS)
         if (chronoLogMutex == nullptr)  chronoLogMutex = xSemaphoreCreateMutex();
       #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_ESP)
+        portMUX_TYPE chronoLogMux = portMUX_INITIALIZER_UNLOCKED;
         if (chronoLogMutex == nullptr) {
-          taskENTER_CRITICAL();
+          taskENTER_CRITICAL(&chronoLogMux);
           if (chronoLogMutex == nullptr)
             chronoLogMutex = xSemaphoreCreateMutex();
-          taskEXIT_CRITICAL();
+          taskEXIT_CRITICAL(&chronoLogMux);
         }
       #elif defined(CHRONOLOG_PLATFORM_ZEPHYR)
         static bool initialized = false;
@@ -216,7 +217,7 @@ private:
   #endif
 
   #if CHRONOLOG_THREAD_SAFE
-    void threadSafeLock() {
+    static void threadSafeLock() {
       #if defined(CHRONOLOG_PLATFORM_STM32_HAL) && defined(CHRONOLOG_STM32_FREERTOS)
         if (chronoLogMutex) xSemaphoreTake(chronoLogMutex, portMAX_DELAY);
       #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_ESP)
@@ -226,7 +227,7 @@ private:
       #endif
     }
 
-    void threadSafeUnlock() {
+    static void threadSafeUnlock() {
       #if defined(CHRONOLOG_PLATFORM_STM32_HAL) && defined(CHRONOLOG_STM32_FREERTOS)
         if (chronoLogMutex) xSemaphoreGive(chronoLogMutex);
       #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_ESP)
