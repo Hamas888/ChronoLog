@@ -1,4 +1,6 @@
+name: "chronoLog"
 version: "1.1.0"
+
 description: >
   Cross-platform chrono-based logging library for embedded systems.
   Provides thread-safe, timestamped logs with module tagging and RTOS awareness.
@@ -8,13 +10,13 @@ url: "https://github.com/Hamas888/ChronoLog"
 repository: "https://github.com/Hamas888/ChronoLog.git"
 issues: "https://github.com/Hamas888/ChronoLog/issues"
 
-maintainers: "Hamas Saeed <hamasaeed888@gmail.com>"
+maintainers:
+  - "Hamas Saeed <hamasaeed888@gmail.com>"
 
 license: "MIT"
 
 dependencies:
-  idf:
-    version: ">=5.0"
+  idf: ">=5.0.0"
 
 tags:
   - logger
