@@ -1,5 +1,30 @@
-# ChronoLog/idf_component.yml
+version: "1.1.0"
+description: >
+  Cross-platform chrono-based logging library for embedded systems.
+  Provides thread-safe, timestamped logs with module tagging and RTOS awareness.
+  Works on ESP-IDF, STM32 HAL, Arduino, and Linux/Windows.
 
-version: 1.0.3
-description: "A chrono logging component for ESP-IDF"
 url: "https://github.com/Hamas888/ChronoLog"
+repository: "https://github.com/Hamas888/ChronoLog.git"
+issues: "https://github.com/Hamas888/ChronoLog/issues"
+
+maintainers:
+  - name: Hamas Saeed
+    email: hamasaeed888@gmail.com
+
+license: "MIT"
+
+dependencies:
+  idf:
+    version: ">=5.0"
+
+tags:
+  - logger
+  - chrono
+  - thread-safe
+  - embedded
+  - esp-idf
+  - rtos
+  - debug
+  - uart
+  - cross-platform

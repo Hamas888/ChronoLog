@@ -1,23 +1,27 @@
 {
   "name": "ChronoLog",
-  "version": "1.0.3",
-  "description": "Cross-platform real-time logger for embedded systems (ESP32, STM32, nRF52)",
+  "version": "1.1.0",
+  "description": "Cross-platform real-time logger for embedded systems and desktop. Features thread safety, progress bars, profiling, and colorized output for Linux, Windows, macOS, and Arduino (AVR/ESP32/STM32/nRF52).",
   "keywords": [
     "logger",
-    "rtos",
-    "uart",
+    "logging",
     "debug",
-    "platformio",
+    "serial",
+    "uart",
+    "printf",
+    "rtos",
+    "thread-safe",
+    "profiling",
+    "progress-bar",
+    "embedded",
     "esp32",
     "stm32",
     "nrf52",
     "arduino",
-    "thread safe",
-    "chronolog",
+    "avr",
+    "platformio",
     "chrono",
-    "logger",
-    "logging",
-    "log"
+    "chronolog"
   ],
   "authors": [
     {
