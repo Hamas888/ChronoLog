@@ -196,14 +196,14 @@ public:
   }}
 
   #if CHRONOLOG_PRO_FEATURES
-    void progress(uint32_t current, uint32_t total, const char* title) const {
+    void progress(const uint32_t current, const uint32_t total, const char* title) const {
       if (chronoLogLevel >= CHRONOLOG_LEVEL_PRO_FEATURES) {
-        if(current > total) current = total;
-        if(total == 0) total = 1; // Prevent division by zero
+        uint32_t  tempCurrent = (current > total) ? total : current;
+        uint32_t  tempTotal   = (total == 0) ? 1 : total; // Prevent division by zero
         if(current < total) { 
-          printProgress("PROGRESS", CHRONOLOG_COLOR_PROGS, current, total, title);
+          printProgress("PROGRESS", CHRONOLOG_COLOR_PROGS, tempCurrent, tempTotal, title);
         } else { 
-          printProgress("PROGRESS", CHRONOLOG_COLOR_PROGF, current, total, title);
+          printProgress("PROGRESS", CHRONOLOG_COLOR_PROGF, tempCurrent, tempTotal, title);
           #if defined(CHRONOLOG_PLATFORM_ARDUINO)
             Serial.println();
           #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)
@@ -396,7 +396,7 @@ private:
   }
 
   #if CHRONOLOG_PRO_FEATURES
-    void printProgress(const char* levelStr, const char* color, uint64_t current, uint64_t total, const char* title) const {
+    void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const {
       #if CHRONOLOG_THREAD_SAFE
         threadSafeLock();
       #endif
@@ -406,9 +406,9 @@ private:
 
       const uint8_t bar_width = 20;
       uint8_t filled_chars = (percent * bar_width) / 100;
-      
-      snprintf(prog_buf, sizeof(prog_buf), "%s: %3u%% (%lu/%lu) [", title, percent, current, total);
-      
+
+      snprintf(prog_buf, sizeof(prog_buf), "%s: %3u%% (%u/%u) [", title, percent, current, total);
+
       for (uint8_t i = 0; i < bar_width; i++) {
         if (i < filled_chars) {
           strncat(prog_buf, "=", sizeof(prog_buf) - strlen(prog_buf) - 1);
