@@ -8,9 +8,7 @@ url: "https://github.com/Hamas888/ChronoLog"
 repository: "https://github.com/Hamas888/ChronoLog.git"
 issues: "https://github.com/Hamas888/ChronoLog/issues"
 
-maintainers:
-  - name: Hamas Saeed
-    email: hamasaeed888@gmail.com
+maintainers: "Hamas Saeed <hamasaeed888@gmail.com>"
 
 license: "MIT"
 
