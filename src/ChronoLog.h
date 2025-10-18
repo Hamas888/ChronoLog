@@ -11,6 +11,6 @@
 #ifndef CHRONOLOG_H
 #define CHRONOLOG_H
 
-#include "include/ChronoLog.h"
+#include "../include/ChronoLog.h"
 
 #endif // CHRONOLOG_H
