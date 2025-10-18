@@ -2,7 +2,7 @@
  ============================================================================================================================================
  * ChronoLog.h - Root-level wrapper for Arduino library compliance
  * Author:      Hamas Saeed
- * Version:     Rev_1.1.0
+ * Version:     Rev_1.1.1
  * Brief:       This wrapper header includes the actual ChronoLog implementation from include/ChronoLog.h
  *              It exists at the root level to satisfy Arduino library specification requirements.
  ============================================================================================================================================
