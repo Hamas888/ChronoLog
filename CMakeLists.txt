@@ -10,10 +10,11 @@ if(DEFINED ZEPHYR_BASE)
     zephyr_include_directories(include)
 
 # Check if we're building with ESP-IDF
-elseif(IDF_PROJECT)
+elseif(DEFINED ESP_PLATFORM OR DEFINED IDF_VER OR DEFINED ENV{IDF_PATH})
     idf_component_register(
         # SRCS "src/ChronoLog.cpp" → not needed yet
         INCLUDE_DIRS "include"
+        REQUIRES ""
     )
     
 # STM32 / generic CMake project
