@@ -8,9 +8,9 @@
  ============================================================================================================================================
  */
 
-#ifndef CHRONOLOG_H
-#define CHRONOLOG_H
+#ifndef CHRONOLOG_WRAPPER_H
+#define CHRONOLOG_WRAPPER_H
 
 #include "../include/ChronoLog.h"
 
-#endif // CHRONOLOG_H
+#endif // CHRONOLOG_WRAPPER_H
