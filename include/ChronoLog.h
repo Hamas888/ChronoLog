@@ -275,7 +275,7 @@ private:
   }
 
   void getTimeStamp(char* buffer, size_t len) const {
-    #if (defined(CHRONOLOG_PLATFORM_ARDUINO) || defined(CHRONOLOG_PLATFORM_ESP_IDF)) && defined(CHRONOLOG_ESP)
+    #if defined(CHRONOLOG_PLATFORM_ESP_IDF) || (defined(CHRONOLOG_PLATFORM_ARDUINO) && defined(CHRONOLOG_ESP))
       struct timeval tv;
       gettimeofday(&tv, NULL);
       struct tm timeinfo;
@@ -370,7 +370,7 @@ private:
       } else {
         #if defined(CHRONOLOG_PLATFORM_ARDUINO)
           Serial.print("[Log too long: memory error]");
-        #elif defined(DEBUG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)
+        #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)
           printf("[Log too long: memory error]");
         #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
           if (!uartHandler) return;
