@@ -102,6 +102,14 @@
   #define CHRONOLOG_PRO_FEATURES  0                         // Set to 1 to enable Pro features (e.g. progress start/stop)
 #endif // CHRONOLOG_PRO_FEATURES
 
+#ifndef CHRONOLOG_REMOTE_ENABLE
+  #define CHRONOLOG_REMOTE_ENABLE 0                         // Set to 1 to enable remote logging
+#endif // CHRONOLOG_REMOTE_ENABLE
+
+#if CHRONOLOG_REMOTE_ENABLE
+  #include "ChronoLogRemote.h"
+#endif // CHRONOLOG_REMOTE_ENABLE
+
 #if CHRONOLOG_COLOR_ENABLE
 #define CHRONOLOG_COLOR_INFO    "\033[3m\033[92m"           // Italic + Green
 #define CHRONOLOG_COLOR_WARN    "\033[3m\033[93m"           // Italic + Yellow
@@ -392,6 +400,19 @@ private:
 
     #if CHRONOLOG_THREAD_SAFE
       threadSafeUnlock();
+    #endif
+
+    // Send to remote logging if enabled
+    #if CHRONOLOG_REMOTE_ENABLE
+    char full_buf[CHRONOLOG_BUFFER_LEN * 2];
+    char time_buf[16];
+    getTimeStamp(time_buf, 16);
+    const char* taskName = getCurrentTaskName();
+    
+    snprintf(full_buf, sizeof(full_buf), "%s | %-15s | %s%-8s%s | %-16s | %s\n",
+             time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName, msg_buf);
+             
+    ChronoLogRemote::getInstance()->write(full_buf);
     #endif
   }
 
