@@ -1,6 +1,6 @@
 # ChronoLog/CMakeLists.txt
 
-set(CHRONOLOG_VERSION 1.1.1)
+set(CHRONOLOG_VERSION 1.1.4)
 
 # Check if we're building with Zephyr
 if(DEFINED ZEPHYR_BASE)
@@ -14,7 +14,11 @@ elseif(DEFINED ESP_PLATFORM OR DEFINED IDF_VER OR DEFINED ENV{IDF_PATH})
     idf_component_register(
         # SRCS "src/ChronoLog.cpp" → not needed yet
         INCLUDE_DIRS "include"
-        REQUIRES ""
+        REQUIRES
+            "lwip"
+            "esp_wifi"
+            "esp_event"
+            "freertos"
     )
     
 # STM32 / generic CMake project

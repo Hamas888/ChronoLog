@@ -144,7 +144,7 @@ public:
     }
 };
 
-ChronoLogRemote* ChronoLogRemote::instance = nullptr;
+inline ChronoLogRemote* ChronoLogRemote::instance = nullptr;
 
 #endif // CHRONOLOG_REMOTE_ENABLE
 #endif // CHRONOLOG_REMOTE_H

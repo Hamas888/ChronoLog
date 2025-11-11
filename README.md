@@ -1,7 +1,7 @@
 # ChronoLog 🕒
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/Version-1.1.0-green.svg)](https://github.com/Hamas888/ChronoLog)
+[![Version](https://img.shields.io/badge/Version-1.1.4-green.svg)](https://github.com/Hamas888/ChronoLog)
 [![Platform](https://img.shields.io/badge/Platform-ARDUINO%20|%20ESP32%20|%20STM32%20|%20nRF52%20|%20Linux%20|%20Windows%20|%20MacOS%20-orange.svg)](https://github.com/Hamas888/ChronoLog)
 
 A **cross-platform real-time logging library** for embedded systems that provides structured, colorized, and timestamped logging with automatic platform detection. ChronoLog seamlessly adapts to different embedded environments including Arduino, ESP-IDF, nRF Connect SDK (Zephyr), and STM32 HAL with or without RTOS support.
@@ -44,10 +44,12 @@ A **cross-platform real-time logging library** for embedded systems that provide
 - **📊 Multiple Log Levels**: DEBUG, INFO, WARN, ERROR, FATAL with runtime level control
 - **🎛️ Module-based Logging**: Create separate loggers for different modules with individual log levels
 - **📈 Progress Bar Support**: Built-in progress tracking with visual progress bars (requires `CHRONOLOG_PRO_FEATURES`)
-- **🖥️ Desktop Support**: Full compatibility with Linux, Windows, and macOS
+- **� Remote Logging**: Stream logs over TCP to remote clients for centralized monitoring (requires `CHRONOLOG_REMOTE_ENABLE`)
+- **�🖥️ Desktop Support**: Full compatibility with Linux, Windows, and macOS
 - **💾 Memory Efficient**: Header-only library with minimal memory footprint
 - **🚀 Zero Configuration**: Works out-of-the-box on supported platforms
 - **⚙️ Conditional Compilation**: Enable only the features you need to optimize for your platform
+- **📦 Official Package Managers**: Available on Arduino IDE Library Manager, PlatformIO, and ESP-IDF Component Manager
 
 ## 🎯 Supported Platforms
 
@@ -63,6 +65,23 @@ A **cross-platform real-time logging library** for embedded systems that provide
 | **macOS** | Native | ✅ pthread | ✅ System Time |
 
 ## 📦 Installation
+
+ChronoLog is officially available on multiple package managers! Choose your preferred installation method:
+
+### 🎯 Quick Installation
+
+**Option 1: Arduino IDE Library Manager** ⭐ (Easiest for Arduino)
+- Open Arduino IDE → Sketch → Include Library → Manage Libraries
+- Search for "ChronoLog"
+- Click Install
+
+**Option 2: PlatformIO Library Manager** ⭐ (Recommended for ESP32/ESP-IDF)
+- Open PlatformIO → Libraries → Search for "ChronoLog" → Install
+- Or manually add to `lib_deps` in `platformio.ini`
+
+**Option 3: ESP-IDF Component Manager** ⭐ (For ESP-IDF Projects)
+- ESP-IDF 5.0+ automatically finds ChronoLog in the component registry
+- Or manually add to your project's dependency manifest
 
 ### PlatformIO (Arduino & ESP-IDF)
 
@@ -294,6 +313,39 @@ void processWithProgress() {
 }
 ```
 
+### Remote Logging Example
+
+```cpp
+#include "ChronoLog.h"
+
+// Enable remote logging in your build configuration
+// #define CHRONOLOG_REMOTE_ENABLE 1
+
+ChronoLogger logger("RemoteApp", CHRONOLOG_LEVEL_INFO);
+
+void setupRemoteLogging() {
+    #if CHRONOLOG_REMOTE_ENABLE
+        // Start the remote logging server on port 9999
+        ChronoLogRemote* remoteLogger = ChronoLogRemote::getInstance();
+        bool started = remoteLogger->start(9999);
+        
+        if (started) {
+            logger.info("Remote logging started on port 9999");
+        } else {
+            logger.error("Failed to start remote logging server");
+        }
+    #else
+        logger.warn("Remote logging is disabled. Enable with CHRONOLOG_REMOTE_ENABLE=1");
+    #endif
+}
+
+void applicationLoop() {
+    logger.info("Application started - logs are streamed to connected clients");
+    logger.debug("This message is sent to all connected remote clients");
+    logger.error("Error logs are also transmitted to remote monitors");
+}
+```
+
 ## 📋 Log Output Examples
 
 ### Arduino/ESP-IDF with NTP Sync
@@ -355,6 +407,7 @@ ChronoLog allows you to enable or disable features at compile time to optimize f
 #define CHRONOLOG_COLOR_ENABLE 1            // Enable colored output (1 = enabled, 0 = disabled)
 #define CHRONOLOG_THREAD_SAFE 1             // Enable thread-safe operations (1 = enabled, 0 = disabled)
 #define CHRONOLOG_PRO_FEATURES 1            // Enable Pro features like progress bars (1 = enabled, 0 = disabled)
+#define CHRONOLOG_REMOTE_ENABLE 0           // Enable remote logging via TCP (1 = enabled, 0 = disabled)
 
 // Note: The following features are automatically detected based on platform:
 // - Timestamps are always enabled and use platform-appropriate time sources
@@ -373,6 +426,7 @@ ChronoLog allows you to enable or disable features at compile time to optimize f
 #define CHRONOLOG_COLOR_ENABLE 0            // Disable colors to save memory
 #define CHRONOLOG_THREAD_SAFE 0             // Disable if not using RTOS
 #define CHRONOLOG_PRO_FEATURES 0            // Disable progress bars
+#define CHRONOLOG_REMOTE_ENABLE 0           // Disable remote logging
 #define CHRONOLOG_DEFAULT_LEVEL CHRONOLOG_LEVEL_ERROR  // Only show errors
 ```
 
@@ -511,23 +565,24 @@ int main(void) {
 ```
 ChronoLog/
 ├── include/
-│   └── ChronoLog.h          # Main header file
+│   └── ChronoLog.h                 # Main header file
 ├── examples/
 │   ├── PlatformIO/
-│   │   ├── Arduino/         # Arduino framework examples
-│   │   └── ESP-IDF/         # ESP-IDF framework examples  
-│   ├── ESP-IDF/             # Native ESP-IDF examples
-│   ├── STM32Cube/           # STM32CubeIDE examples
-│   ├── NRF Connect SDK/     # nRF Connect SDK examples
-│   ├── Pro Features/        # Advanced features examples
-│   │   └── ESP32-S3 Progress Bar/  # Progress bar implementation
-│   ├── ThreadSafe/          # Thread safety examples
+│   │   ├── Arduino/                # Arduino framework examples
+│   │   └── ESP-IDF/                # ESP-IDF framework examples  
+│   ├── ESP-IDF/                    # Native ESP-IDF examples
+│   ├── STM32Cube/                  # STM32CubeIDE examples
+│   ├── NRF Connect SDK/            # nRF Connect SDK examples
+│   ├── Pro Features/               # Advanced features examples
+│   │   ├── ESP32-S3 Progress Bar/  # Progress bar implementation
+│   │   └── Remote Logging/         # Remote logging implementation (TCP streaming)
+│   ├── ThreadSafe/                 # Thread safety examples
 │   │   └── ESP32-S3 Thread Safety/ # Multi-threading examples
-│   └── Desktop/             # Desktop application examples
-├── CMakeLists.txt           # Multi-platform CMake configuration
-├── library.json             # PlatformIO library manifest
-├── library.properties       # Arduino library properties
-├── idf_component.yml        # ESP-IDF component configuration
+│   └── Desktop/                    # Desktop application examples
+├── CMakeLists.txt                  # Multi-platform CMake configuration
+├── library.json                    # PlatformIO library manifest
+├── library.properties              # Arduino library properties
+├── idf_component.yml               # ESP-IDF component configuration
 └── README.md
 ```
 
@@ -535,14 +590,18 @@ ChronoLog/
 
 ChronoLog is actively developed with exciting features planned for future releases:
 
+### ✅ Recently Implemented Features
+- **📡 Remote Logging**: TCP-based log streaming to remote clients (v1.1.0+)
+- **📈 Progress Bar Support**: Visual progress tracking with color indicators (v1.0+)
+- **🧵 Thread-Safe Operation**: Safe concurrent logging from multiple threads (v1.0+)
+
 ### 🔜 Next Major Features
-- **📡 Remote Logging**: Custom user channels via callbacks to route logs anywhere you need
 - **💾 Flash File Logging**: Log directly to flash memory with retrieval capabilities  
 - **⚡ Memory & Speed Optimization**: Enhanced performance for resource-constrained systems
 - **🔧 Robust 8-bit AVR Support**: Full compatibility with Arduino Uno, Nano, and other 8-bit platforms
 
 ### 🎯 Advanced Features In My Mind
-- **🌐 Network Logging**: UDP/TCP log streaming for IoT applications
+- **📝 Log Filtering**: Built-in filtering and pattern matching for logs
 - **📊 Log Analytics**: Built-in log filtering and analysis tools
 - **🔒 Encrypted Logging**: Secure log transmission and storage
 - **📱 Mobile App Integration**: Real-time log monitoring via smartphone apps

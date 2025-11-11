@@ -2,8 +2,8 @@
  ============================================================================================================================================
  * File:        ChronoLog.h
  * Author:      Hamas Saeed
- * Version:     Rev_1.1.1
- * Date:        Oct 18 2025
+ * Version:     Rev_1.1.4
+ * Date:        Nov 11 2025
  * Brief:       This file provides Debuging / Logging functionalities for embedded & Desktop systems (Arduino, ESP-IDF, Zephyr, STM32 HAL).
  ============================================================================================================================================
  * License: 
@@ -394,7 +394,7 @@ private:
       printf("\n");
     #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
       if (!uartHandler) return;
-      const char* newline = "\n";
+      const char* newline = "\n\r";
       HAL_UART_Transmit(uartHandler, (uint8_t*)newline, strlen(newline), HAL_MAX_DELAY);
     #endif
 
