@@ -1,5 +1,5 @@
 name: "chronoLog"
-version: "1.1.4"
+version: "1.1.5"
 
 description: >
   Cross-platform chrono-based logging library for embedded systems.
@@ -17,6 +17,12 @@ license: "MIT"
 
 dependencies:
   idf: ">=5.0"
+
+examples:
+  - path: examples/ESP32/ESP-IDF/Logging
+  - path: examples/ESP32/ESP-IDF/ProgressBar
+  - path: examples/ESP32/ESP-IDF/RemoteLogging
+  - path: examples/ESP32/ESP-IDF/ThreadSafety
 
 tags:
   - logger

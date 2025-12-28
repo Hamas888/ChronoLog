@@ -1,6 +1,6 @@
 {
   "name": "ChronoLog",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Cross-platform real-time logger for embedded systems and desktop. Features thread safety, progress bars, profiling, and colorized output for Linux, Windows, macOS, and Arduino (AVR/ESP32/STM32/nRF52).",
   "keywords": [
     "logger",
@@ -48,21 +48,14 @@
   "license": "MIT",
   "homepage": "https://github.com/Hamas888/ChronoLog",
   "examples": [
-    "examples/ESP-IDF/ESP32-C6 Logging/main/main.cpp",
-    "examples/ESP-IDF/ESP32-S3 Logging/main/main.cpp",
-    "examples/STM32Cube/STM32_NucleoL010RB_Logging/Core/Src/main.cpp",
-    "examples/STM32Cube/STM32_NucleoL010RB_Logging_RTOS/Core/Src/main.cpp",
-    "examples/PlatformIO/Arduino/ESP32-C6 Logging/src/main.cpp",
-    "examples/PlatformIO/Arduino/ESP32-S3 Logging/src/main.cpp",
-    "examples/PlatformIO/ESP-IDF/ESP32-C6 Logging/src/main.cpp",
-    "examples/PlatformIO/ESP-IDF/ESP32-S3 Logging/src/main.cpp",
-    "examples/ArduinoIDE/ArduinoUno-Logging/Arduino-ThreadSafety.ino",
-    "examples/ArduinoIDE/ArduinoUno-Logging/Arduino-ProgressBar.ino",
-    "examples/ArduinoIDE/ArduinoUno-Logging/ArduinoUno-Logging.ino",
-    "examples/NRF Connect SDK/nRF52832_Logging/src/main.cpp",
-    "examples/Pro Features/Remote Logging/ESP32-RemoteLogging.cpp",
-    "examples/Pro Features/Remote Logging/Desktop-RemoteLogging.cpp",
-    "examples/ThreadSafe/ESP32-S3 Thread Safety/src/main.cpp"
+    "examples/ESP32/PlatformIO/Arduino/Logging/src/Logging.cpp",
+    "examples/ESP32/PlatformIO/Arduino/ProgressBar/src/ProgressBar.cpp",
+    "examples/ESP32/PlatformIO/Arduino/RemoteLogging/src/RemoteLogging.cpp",
+    "examples/ESP32/PlatformIO/Arduino/ThreadSafety/src/ThreadSafety.cpp",
+    "examples/ESP32/PlatformIO/ESP-IDF/Logging/src/Logging.cpp",
+    "examples/ESP32/PlatformIO/ESP-IDF/ProgressBar/src/ProgressBar.cpp",
+    "examples/ESP32/PlatformIO/ESP-IDF/RemoteLogging/src/RemoteLogging.cpp",
+    "examples/ESP32/PlatformIO/ESP-IDF/ThreadSafety/src/ThreadSafety.cpp"
   ],
   "export": {
     "include": [
@@ -77,7 +70,13 @@
     "exclude": [
       "test",
       ".pio",
-      ".vscode"
+      ".vscode",
+      "examples/ArduinoAppLab",
+      "examples/ArduinoIDE",
+      "examples/Desktop",
+      "examples/NRF",
+      "examples/STM32",
+      "examples/ESP32/ESP-IDF"
     ]
   }
 }
