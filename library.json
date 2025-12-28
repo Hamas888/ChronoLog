@@ -60,7 +60,6 @@
   "export": {
     "include": [
       "src",
-      "include",
       "examples",
       "CMakeLists.txt",
       "library.json",
