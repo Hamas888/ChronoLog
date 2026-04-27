@@ -163,13 +163,13 @@ enum ChronoLogLevel {
 
 #if CHRONOLOG_THREAD_SAFE
   #if defined(CHRONOLOG_PLATFORM_DESKTOP)
-    static std::mutex chronoLogMutex;
+    extern std::mutex chronoLogMutex;
   #elif defined(CHRONOLOG_STM32_FREERTOS)
-    static osMutexId_t chronoLogMutex = nullptr;
+    extern osMutexId_t chronoLogMutex;
   #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_ESP)
-    static SemaphoreHandle_t chronoLogMutex = nullptr;
+    extern SemaphoreHandle_t chronoLogMutex;
   #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_UNO_Q)
-    static struct k_mutex chronoLogMutex;
+    extern struct k_mutex chronoLogMutex;
   #endif
 #endif // CHRONOLOG_THREAD_SAFE
 

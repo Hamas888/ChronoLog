@@ -1,6 +1,6 @@
 # ChronoLog/CMakeLists.txt
 
-set(CHRONOLOG_VERSION 1.1.5)
+set(CHRONOLOG_VERSION 1.2.0)
 
 # Check if we're building with Zephyr
 if(DEFINED ZEPHYR_BASE)
@@ -12,8 +12,8 @@ if(DEFINED ZEPHYR_BASE)
 # Check if we're building with ESP-IDF
 elseif(DEFINED ESP_PLATFORM OR DEFINED IDF_VER OR DEFINED ENV{IDF_PATH})
     idf_component_register(
-        # SRCS "src/ChronoLog.cpp" → not needed yet
         INCLUDE_DIRS "src"
+        SRCS "src/ChronoLog.cpp"
         REQUIRES
             "lwip"
             "esp_wifi"

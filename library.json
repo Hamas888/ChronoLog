@@ -1,6 +1,6 @@
 {
   "name": "ChronoLog",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "description": "Cross-platform real-time logger for embedded systems and desktop. Features thread safety, progress bars, profiling, and colorized output for Linux, Windows, macOS, and Arduino (AVR/ESP32/STM32/nRF52).",
   "keywords": [
     "logger",
