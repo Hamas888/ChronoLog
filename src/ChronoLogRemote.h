@@ -36,7 +36,6 @@
 
 class ChronoLogRemote {
 private:
-    static ChronoLogRemote* instance;
     int serverSocket;
     std::vector<int> clients;
     bool running;
@@ -50,10 +49,8 @@ private:
     
 public:
     static ChronoLogRemote* getInstance() {
-        if (instance == nullptr) {
-            instance = new ChronoLogRemote();
-        }
-        return instance;
+        static ChronoLogRemote s_instance;
+        return &s_instance;
     }
     
     bool start(uint16_t port = 9999) {
@@ -144,7 +141,7 @@ public:
     }
 };
 
-inline ChronoLogRemote* ChronoLogRemote::instance = nullptr;
+// Note: single-instance is provided by function-local static in getInstance()
 
 #endif // CHRONOLOG_REMOTE_ENABLE
 #endif // CHRONOLOG_REMOTE_H

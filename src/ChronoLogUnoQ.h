@@ -7,8 +7,8 @@
         const char* name;
     };
 
-    static      ThreadMapEntry threadsMap[CHRONOLOG_MAX_THREADS]; 
-    static int  threadsMapCount = 0;
+    extern      ThreadMapEntry threadsMap[CHRONOLOG_MAX_THREADS];
+    extern int  threadsMapCount;
 
     static inline char *chronolog_strncat(char *dst, const char *src, size_t n) {
         char *d = dst;

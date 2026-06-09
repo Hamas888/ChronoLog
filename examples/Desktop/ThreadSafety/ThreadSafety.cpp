@@ -1,7 +1,7 @@
 #define CHRONOLOG_THREAD_SAFE           1           // Enabled thread-safe logging
 #define CHRONOLOG_COLOR_ENABLE          1           // 0 = Disable colors for ANSII-incompatible terminals
 
-#include "../../../include/ChronoLog.h"
+#include "ChronoLog.h"
 #include <thread>
 #include <chrono>
 #include <atomic>

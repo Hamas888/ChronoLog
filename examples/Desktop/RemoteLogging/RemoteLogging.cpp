@@ -1,8 +1,8 @@
 #define CHRONOLOG_REMOTE_ENABLE         1           // Enable remote logging server
 #define CHRONOLOG_COLOR_ENABLE          1           // 0 = Disable colors for ANSII-incompatible terminals
 
-#include "../../../include/ChronoLog.h"
-#include "../../../include/ChronoLogRemote.h"
+#include "ChronoLog.h"
+#include "ChronoLogRemote.h"
 #include <thread>
 #include <chrono>
 
