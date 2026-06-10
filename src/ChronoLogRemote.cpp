@@ -3,7 +3,7 @@
   Implementation of the remote TCP log streaming server.
 */
 
-#include "ChronoLogRemote.h"
+#include "ChronoLog.h"
 
 #if CHRONOLOG_REMOTE_ENABLE
 
