@@ -5,6 +5,12 @@
 
 #include "ChronoLog.h"
 
+// Scope platform-specific macros to this translation unit only
+#if defined(CHRONOLOG_PLATFORM_ARDUINO) && defined(CHRONOLOG_UNO_Q)
+  #define strncat     chronolog_strncat
+  #define vsnprintf   chronolog_vsnprintf
+#endif
+
 #if CHRONOLOG_THREAD_SAFE
   #if defined(CHRONOLOG_PLATFORM_DESKTOP)
     std::mutex chronoLogMutex;
@@ -30,7 +36,7 @@ ChronoLogger::ChronoLogger(const char* moduleName, ChronoLogLevel level)
     #if defined(CHRONOLOG_PLATFORM_STM32_HAL) && defined(CHRONOLOG_STM32_FREERTOS)
       if (chronoLogMutex == nullptr)  chronoLogMutex = osMutexNew(NULL);
     #elif defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_ESP)
-      portMUX_TYPE chronoLogMux = portMUX_INITIALIZER_UNLOCKED;
+      static portMUX_TYPE chronoLogMux = portMUX_INITIALIZER_UNLOCKED;
       if (chronoLogMutex == nullptr) {
         taskENTER_CRITICAL(&chronoLogMux);
         if (chronoLogMutex == nullptr)
@@ -133,7 +139,7 @@ void ChronoLogger::warn(const char* fmt, ...) const {
   if (chronoLogLevel >= CHRONOLOG_LEVEL_WARN) {
     va_list args;
     va_start(args, fmt);
-    print("WARNING", CHRONOLOG_COLOR_WARN, fmt, args);
+    print("WARN", CHRONOLOG_COLOR_WARN, fmt, args);
     va_end(args);
   }
 }
@@ -187,12 +193,8 @@ void ChronoLogger::getTimeStamp(char* buffer, size_t len) const {
   #endif
 }
 
-void ChronoLogger::printInfo(const char* levelStr, const char* color) const {
-  char time_buf[16];
-  getTimeStamp(time_buf, 16);
-
-  const char* taskName = getCurrentTaskName();
-
+void ChronoLogger::printInfo(const char* levelStr, const char* color,
+                             const char* time_buf, const char* taskName) const {
   #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
     char line_buf[96];
     snprintf(
@@ -238,6 +240,9 @@ void ChronoLogger::printInfo(const char* levelStr, const char* color) const {
     if (chronoLogLevel >= CHRONOLOG_LEVEL_PRO_FEATURES) {
       uint32_t  tempCurrent = (current > total) ? total : current;
       uint32_t  tempTotal   = (total == 0) ? 1 : total; // Prevent division by zero
+      #if CHRONOLOG_THREAD_SAFE
+        threadSafeLock();
+      #endif
       if(current < total) { 
         printProgress("PROGRESS", CHRONOLOG_COLOR_PROGS, tempCurrent, tempTotal, title);
       } else { 
@@ -255,16 +260,23 @@ void ChronoLogger::printInfo(const char* levelStr, const char* color) const {
           }
         #endif
       }
+      #if CHRONOLOG_THREAD_SAFE
+        threadSafeUnlock();
+      #endif
     }
   }
 #endif // CHRONOLOG_PRO_FEATURES
 
 void ChronoLogger::print(const char* levelStr, const char* color, const char* fmt, va_list args) const {
+  char time_buf[16];
+  getTimeStamp(time_buf, 16);
+  const char* taskName = getCurrentTaskName();
+
   #if CHRONOLOG_THREAD_SAFE
     threadSafeLock();
   #endif
 
-  printInfo(levelStr, color);
+  printInfo(levelStr, color, time_buf, taskName);
   char msg_buf[CHRONOLOG_BUFFER_LEN];
   va_list args_copy;
   va_copy(args_copy, args);
@@ -316,31 +328,25 @@ void ChronoLogger::print(const char* levelStr, const char* color, const char* fm
     printf("\n");
   #endif
 
-  #if CHRONOLOG_THREAD_SAFE
-    threadSafeUnlock();
+  #if CHRONOLOG_REMOTE_ENABLE
+    char full_buf[CHRONOLOG_BUFFER_LEN * 2];
+    snprintf(
+      full_buf, sizeof(full_buf), "%s | %-15s | %s%-8s%s | %-16s | %s\n",
+      time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName, msg_buf
+    );
+    ChronoLogRemote::getInstance()->write(full_buf);
   #endif
 
-  // Send to remote logging if enabled
-  #if CHRONOLOG_REMOTE_ENABLE
-  char full_buf[CHRONOLOG_BUFFER_LEN * 2];
-  char time_buf[16];
-  getTimeStamp(time_buf, 16);
-  const char* taskName = getCurrentTaskName();
-  
-  snprintf(
-    full_buf, sizeof(full_buf), "%s | %-15s | %s%-8s%s | %-16s | %s\n",
-    time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName, msg_buf
-  );
-            
-  ChronoLogRemote::getInstance()->write(full_buf);
+  #if CHRONOLOG_THREAD_SAFE
+    threadSafeUnlock();
   #endif
 }
 
 void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const {
-  #if CHRONOLOG_THREAD_SAFE
-    threadSafeLock();
-  #endif
-  printInfo(levelStr, color);
+  char time_buf[16];
+  getTimeStamp(time_buf, 16);
+  const char* taskName = getCurrentTaskName();
+  printInfo(levelStr, color, time_buf, taskName);
   uint8_t percent = (current * 100) / total;
   char prog_buf[100];
 
@@ -375,9 +381,6 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
   #elif defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || defined(CHRONOLOG_PLATFORM_DESKTOP)
     printf("%s\r", prog_buf);  // Carriage return to overwrite same line
     fflush(stdout);            // Ensure output is sent immediately
-  #endif
-  #if CHRONOLOG_THREAD_SAFE
-    threadSafeUnlock();
   #endif
 }
 

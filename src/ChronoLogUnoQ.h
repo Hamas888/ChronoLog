@@ -1,5 +1,5 @@
-#ifndef CHRNOLOG_UNO_Q_H
-#define CHRNOLOG_UNO_Q_H
+#ifndef CHRONOLOG_UNO_Q_H
+#define CHRONOLOG_UNO_Q_H
 
 #if defined(CHRONOLOG_PLATFORM_ARDUINO) && defined(CHRONOLOG_UNO_Q)
     struct ThreadMapEntry {
@@ -69,9 +69,6 @@
         *out = '\0';
         return written;
     }
-
-    #define strncat     chronolog_strncat
-    #define vsnprintf   chronolog_vsnprintf
 
 #endif // CHRONOLOG_PLATFORM_ARDUINO && CHRONOLOG_UNO_Q
 

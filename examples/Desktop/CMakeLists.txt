@@ -18,7 +18,7 @@ include(FetchContent)
 FetchContent_Declare(
   chronolog
   GIT_REPOSITORY "https://github.com/Hamas888/ChronoLog.git"
-  GIT_TAG        "epic/v1.2.0-threading-and-quality" # Or a specific version tag, e.g., "v1.2.0"
+  GIT_TAG        "epic/v1.6.0-threading-and-quality" # Or a specific version tag, e.g., "v1.0.0"
 )
 
 FetchContent_MakeAvailable(chronolog)

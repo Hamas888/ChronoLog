@@ -127,7 +127,7 @@
   #ifdef CONFIG_CHRONOLOG_BUFFER_LEN
     #define CHRONOLOG_BUFFER_LEN                      CONFIG_CHRONOLOG_BUFFER_LEN
   #else
-    #define CHRONOLOG_BUFFER_LEN                      100                                                            // Buffer length for formatted messages (increase if needed)
+    #define CHRONOLOG_BUFFER_LEN                      256                                                            // Buffer length for formatted messages (increase if needed)
   #endif
 #endif // CHRONOLOG_BUFFER_LEN
 
@@ -253,7 +253,7 @@ private:
 
   static const char* getCurrentTaskName();
   void getTimeStamp(char* buffer, size_t len) const;
-  void printInfo(const char* levelStr, const char* color) const;
+  void printInfo(const char* levelStr, const char* color, const char* time_buf, const char* taskName) const;
   void print(const char* levelStr, const char* color, const char* fmt, va_list args) const;
 
   };
