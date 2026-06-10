@@ -344,6 +344,7 @@ void ChronoLogger::print(const char* levelStr, const char* color, const char* fm
   #endif
 }
 
+#if CHRONOLOG_PRO_FEATURES
 void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const {
   char time_buf[16];
   getTimeStamp(time_buf, 16);
@@ -385,5 +386,7 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
     fflush(stdout);            // Ensure output is sent immediately
   #endif
 }
+
+#endif // CHRONOLOG_PRO_FEATURES
 
 #endif // CHRONOLOG_MODE
