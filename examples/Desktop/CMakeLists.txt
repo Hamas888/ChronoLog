@@ -40,6 +40,7 @@ option(CHRONOLOG_REMOTE_ENABLE "Enable remote TCP logging" ON)
 # Add the ChronoLog source files. The path is relative to this CMakeLists.txt.
 add_library(chronolog_lib STATIC
     ${chronolog_SOURCE_DIR}/src/ChronoLog.cpp
+    ${chronolog_SOURCE_DIR}/src/ChronoLogRemote.cpp
 )
 
 # Add the 'src' directory to the library's include path so it can find "ChronoLog.h".

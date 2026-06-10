@@ -5,15 +5,15 @@ set(CHRONOLOG_VERSION 1.2.0)
 # Check if we're building with Zephyr
 if(DEFINED ZEPHYR_BASE)
 
-    # zephyr_library()
-    # zephyr_library_sources() → not needed yet
+    zephyr_library()
+    zephyr_library_sources(src/ChronoLog.cpp src/ChronoLogRemote.cpp)
     zephyr_include_directories(src)
 
 # Check if we're building with ESP-IDF
 elseif(DEFINED ESP_PLATFORM OR DEFINED IDF_VER OR DEFINED ENV{IDF_PATH})
     idf_component_register(
         INCLUDE_DIRS "src"
-        SRCS "src/ChronoLog.cpp"
+        SRCS "src/ChronoLog.cpp" "src/ChronoLogRemote.cpp"
         REQUIRES
             "lwip"
             "esp_wifi"
@@ -23,7 +23,10 @@ elseif(DEFINED ESP_PLATFORM OR DEFINED IDF_VER OR DEFINED ENV{IDF_PATH})
     
 # STM32 / generic CMake project
 else()
-    add_library(ChronoLog INTERFACE)
-    target_include_directories(ChronoLog INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-    target_compile_features(ChronoLog INTERFACE cxx_std_17)
+    add_library(ChronoLog STATIC
+        src/ChronoLog.cpp
+        src/ChronoLogRemote.cpp
+    )
+    target_include_directories(ChronoLog PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    target_compile_features(ChronoLog PUBLIC cxx_std_17)
 endif()
