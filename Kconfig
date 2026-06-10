@@ -32,7 +32,7 @@ menu "ChronoLog Configuration"
         
     config CHRONOLOG_BUFFER_LEN
         int "ChronoLog Buffer Length"
-        default 1024
+        default 256
         help
             The length of the buffer used by the ChronoLog component.
 

@@ -196,13 +196,13 @@ void ChronoLogger::getTimeStamp(char* buffer, size_t len) const {
 void ChronoLogger::printInfo(const char* levelStr, const char* color,
                              const char* time_buf, const char* taskName) const {
   #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
+    if (!uartHandler) return;
     char line_buf[96];
     snprintf(
       line_buf, sizeof(line_buf),
       "%s | %-15s | %s%-8s%s | %-16s | ",
       time_buf, name, color, levelStr, CHRONOLOG_COLOR_RESET, taskName
     );
-    if (!uartHandler) return;
     HAL_UART_Transmit(
       uartHandler, (uint8_t*)line_buf, strlen(line_buf), HAL_MAX_DELAY
     );
@@ -329,6 +329,8 @@ void ChronoLogger::print(const char* levelStr, const char* color, const char* fm
   #endif
 
   #if CHRONOLOG_REMOTE_ENABLE
+    // Lock order: chronoLogMutex (already held) -> clientsMutex (inside write()).
+    // ChronoLogRemote never calls back into ChronoLogger, so this is safe.
     char full_buf[CHRONOLOG_BUFFER_LEN * 2];
     snprintf(
       full_buf, sizeof(full_buf), "%s | %-15s | %s%-8s%s | %-16s | %s\n",

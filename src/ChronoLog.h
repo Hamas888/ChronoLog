@@ -235,10 +235,13 @@ public:
 
   #if CHRONOLOG_PRO_FEATURES
     void progress(const uint32_t current, const uint32_t total, const char* title) const;
-    void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const;
   #endif // CHRONOLOG_PRO_FEATURES
 
 private:
+  #if CHRONOLOG_PRO_FEATURES
+    void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const;
+  #endif // CHRONOLOG_PRO_FEATURES
+
   const char* name;
   ChronoLogLevel chronoLogLevel;
 
@@ -272,6 +275,10 @@ public:
 
   #if CHRONOLOG_PRO_FEATURES
     void progress(uint32_t current, uint32_t total, const char* title) const {}
+  #endif // CHRONOLOG_PRO_FEATURES
+
+private:
+  #if CHRONOLOG_PRO_FEATURES
     void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const;
   #endif // CHRONOLOG_PRO_FEATURES
 };
