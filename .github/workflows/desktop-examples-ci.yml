@@ -1,0 +1,32 @@
+name: Desktop Examples CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-examples:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up CMake
+        uses: lukka/get-cmake@v4
+        with:
+          cmake-version: '3.25.0'
+
+      - name: Configure examples build
+        run: cmake -S . -B build-examples -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build desktop examples
+        run: cmake --build build-examples --config Release --parallel --target DesktopLogging DesktopProgressBar DesktopThreadSafety DesktopRemoteLogging
+
+      - name: Run desktop example tests
+        run: ctest --test-dir build-examples --output-on-failure

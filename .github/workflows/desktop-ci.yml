@@ -1,0 +1,32 @@
+name: Desktop CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up CMake
+        uses: lukka/get-cmake@v4
+        with:
+          cmake-version: '3.25.0'
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build ChronoLog and tests
+        run: cmake --build build --config Release --parallel
+
+      - name: Run desktop tests
+        run: ctest --test-dir build --output-on-failure

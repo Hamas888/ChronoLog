@@ -3,6 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/Version-1.2.0-green.svg)](https://github.com/Hamas888/ChronoLog)
 [![Platform](https://img.shields.io/badge/Platform-ARDUINO%20|%20ESP32%20|%20STM32%20|%20nRF52%20|%20Linux%20|%20Windows%20|%20MacOS%20-orange.svg)](https://github.com/Hamas888/ChronoLog)
+[![Desktop CI](https://github.com/Hamas888/ChronoLog/actions/workflows/desktop-ci.yml/badge.svg)](https://github.com/Hamas888/ChronoLog/actions/workflows/desktop-ci.yml)
+[![Desktop Examples CI](https://github.com/Hamas888/ChronoLog/actions/workflows/desktop-examples-ci.yml/badge.svg)](https://github.com/Hamas888/ChronoLog/actions/workflows/desktop-examples-ci.yml)
 
 A **cross-platform real-time logging library** for embedded systems that provides structured, colorized, and timestamped logging with automatic platform detection. ChronoLog seamlessly adapts to different embedded environments including Arduino, ESP-IDF, nRF Connect SDK (Zephyr), and STM32 HAL with or without RTOS support.
 
@@ -727,6 +729,48 @@ Each additional `ChronoLogger` costs **8 bytes RAM** and **zero extra flash** �
 ¹ STM32 HAL `printf` redirect is tiny but provides **none** of: levels, timestamps, modules, task names, or thread safety.
 
 **Key takeaway**: ChronoLog matches or exceeds vendor loggers in every feature category while maintaining a **smaller flash footprint** than most and costing **only 8 extra bytes of RAM per instance**. The true differentiator is **cross-platform portability** — write your logging code once, compile it on any target.
+
+## 🧪 Automated Tests
+
+A native desktop test harness is included under `tests/` to validate the library build and basic desktop logging output.
+
+### Run locally with CMake
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+ctest --test-dir build --output-on-failure
+```
+
+This now also includes CTest wrappers for desktop example executables, so the examples can be run automatically as part of the same test suite rather than only through GitHub Actions.
+
+### GitHub Actions
+
+A workflow is available at `.github/workflows/desktop-ci.yml` to build the library and run the desktop test automatically on `push`, `pull_request`, or via manual dispatch.
+
+A second workflow at `.github/workflows/desktop-examples-ci.yml` builds the desktop example binaries and runs each one briefly to confirm the runtime behavior before termination:
+- `DesktopLogging`
+- `DesktopProgressBar`
+- `DesktopThreadSafety`
+- `DesktopRemoteLogging`
+
+### Trigger workflows locally
+
+If you have GitHub CLI installed:
+
+```bash
+gh workflow run desktop-ci.yml
+gh workflow run desktop-examples-ci.yml
+```
+
+If you want a local simulator for GitHub Actions:
+
+```bash
+act workflow_dispatch -W .github/workflows/desktop-ci.yml
+act workflow_dispatch -W .github/workflows/desktop-examples-ci.yml
+```
+
+> Note: `act` requires Docker and may need a Linux-compatible image.
 
 ## 🛣️ Roadmap & Upcoming Features
 

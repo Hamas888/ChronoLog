@@ -1,4 +1,5 @@
-# ChronoLog/CMakeLists.txt
+cmake_minimum_required(VERSION 3.15)
+project(ChronoLog VERSION 1.2.0 LANGUAGES CXX)
 
 set(CHRONOLOG_VERSION 1.2.0)
 
@@ -29,4 +30,11 @@ else()
     )
     target_include_directories(ChronoLog PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
     target_compile_features(ChronoLog PUBLIC cxx_std_17)
+endif()
+
+# Desktop/native CMake tests and desktop examples
+if(NOT DEFINED ESP_PLATFORM AND NOT DEFINED IDF_VER AND NOT DEFINED ENV{IDF_PATH} AND NOT DEFINED ZEPHYR_BASE)
+  enable_testing()
+  add_subdirectory(tests)
+  add_subdirectory(examples)
 endif()
