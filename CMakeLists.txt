@@ -30,6 +30,11 @@ else()
     )
     target_include_directories(ChronoLog PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
     target_compile_features(ChronoLog PUBLIC cxx_std_17)
+    target_compile_definitions(ChronoLog PUBLIC
+        CHRONOLOG_PRO_FEATURES=1
+        CHRONOLOG_REMOTE_ENABLE=1
+        CHRONOLOG_COLOR_ENABLE=1
+    )
 endif()
 
 # Desktop/native CMake tests and desktop examples

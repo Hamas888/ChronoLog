@@ -11,17 +11,14 @@ int main() {
     logger.debug("Desktop Progress Bar Example Starting...");
     logger.info("Logger initialized successfully at PRO_FEATURES level");
 
-    while (true) {
-        logger.info("Simulating Download...");
-        int total_Chunks = 1000;
-        for(int current=0; current <= total_Chunks; current++) {
-            logger.progress(current, total_Chunks, "Downloading");
-            /* Simulate work */
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));         // Simulate work
-        }
-
-        std::this_thread::sleep_for(std::chrono::seconds(5));                  // Progress Simulation every 5 seconds
+    logger.info("Simulating Download...");
+    int total_Chunks = 50;
+    for(int current=0; current <= total_Chunks; current++) {
+        logger.progress(current, total_Chunks, "Downloading");
+        /* Simulate work */
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));             // Simulate work
     }
 
+    logger.info("Download complete!");
     return 0;
 }

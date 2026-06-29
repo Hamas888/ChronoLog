@@ -20,13 +20,14 @@ int main() {
     ChronoLogger networkLogger("Network", CHRONOLOG_LEVEL_DEBUG);
     
     // Simulate some logging activity
-    while(true) {
+    for (int i = 0; i < 5; i++) {
         sensorLogger.debug("Temperature reading: 25.6°C");
         networkLogger.info("Network status: Connected");
         networkLogger.warn("High latency detected: 150ms");
         
-        std::this_thread::sleep_for(std::chrono::seconds(2));                  // Log messages every 2 seconds
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));           // Small delay between batches
     }
     
+    logger.info("Remote logging example completed");
     return 0;
 }
