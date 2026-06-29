@@ -5,6 +5,7 @@
 [![Platform](https://img.shields.io/badge/Platform-ARDUINO%20|%20ESP32%20|%20STM32%20|%20nRF52%20|%20Linux%20|%20Windows%20|%20MacOS%20-orange.svg)](https://github.com/Hamas888/ChronoLog)
 [![Desktop CI](https://github.com/Hamas888/ChronoLog/actions/workflows/desktop-ci.yml/badge.svg)](https://github.com/Hamas888/ChronoLog/actions/workflows/desktop-ci.yml)
 [![Desktop Examples CI](https://github.com/Hamas888/ChronoLog/actions/workflows/desktop-examples-ci.yml/badge.svg)](https://github.com/Hamas888/ChronoLog/actions/workflows/desktop-examples-ci.yml)
+[![PlatformIO CI](https://github.com/Hamas888/ChronoLog/actions/workflows/platformio-ci.yml/badge.svg)](https://github.com/Hamas888/ChronoLog/actions/workflows/platformio-ci.yml)
 
 A **cross-platform real-time logging library** for embedded systems that provides structured, colorized, and timestamped logging with automatic platform detection. ChronoLog seamlessly adapts to different embedded environments including Arduino, ESP-IDF, nRF Connect SDK (Zephyr), and STM32 HAL with or without RTOS support.
 

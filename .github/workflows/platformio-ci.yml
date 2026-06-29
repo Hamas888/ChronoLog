@@ -1,0 +1,72 @@
+# =============================================================================
+# PlatformIO CI — cross-compile ChronoLog for all embedded targets
+# =============================================================================
+# Builds every example in the matrix below using the ChronoLog CI image
+# (which pre-caches PlatformIO cores).  Runs on PRs to main and on
+# manual dispatch.
+# =============================================================================
+
+name: PlatformIO CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Use the custom Docker image built by docker-build.yml.
+# Falls back to pulling 'latest' tag from ghcr.io.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: ESP32 Arduino — Logging
+            dir: examples/ESP32/PlatformIO/Arduino/Logging
+          - name: ESP32 Arduino — ProgressBar
+            dir: examples/ESP32/PlatformIO/Arduino/ProgressBar
+          - name: ESP32 Arduino — RemoteLogging
+            dir: examples/ESP32/PlatformIO/Arduino/RemoteLogging
+          - name: ESP32 Arduino — ThreadSafety
+            dir: examples/ESP32/PlatformIO/Arduino/ThreadSafety
+          - name: ESP32 ESP-IDF — Logging
+            dir: examples/ESP32/PlatformIO/ESP-IDF/Logging
+          - name: ESP32 ESP-IDF — ProgressBar
+            dir: examples/ESP32/PlatformIO/ESP-IDF/ProgressBar
+          - name: ESP32 ESP-IDF — RemoteLogging
+            dir: examples/ESP32/PlatformIO/ESP-IDF/RemoteLogging
+          - name: ESP32 ESP-IDF — ThreadSafety
+            dir: examples/ESP32/PlatformIO/ESP-IDF/ThreadSafety
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.target.name }}
+        working-directory: ${{ matrix.target.dir }}
+        run: pio run
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Summary job — only runs when all matrix jobs succeed
+  # ─────────────────────────────────────────────────────────────────────────
+  summary:
+    if: always()
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check build matrix status
+        run: |
+          echo "## ✅ PlatformIO CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All embedded target builds completed." >> $GITHUB_STEP_SUMMARY
