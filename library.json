@@ -48,14 +48,14 @@
   "license": "MIT",
   "homepage": "https://github.com/Hamas888/ChronoLog",
   "examples": [
-    "examples/ESP32/PlatformIO/Arduino/Logging/src/Logging.cpp",
-    "examples/ESP32/PlatformIO/Arduino/ProgressBar/src/ProgressBar.cpp",
-    "examples/ESP32/PlatformIO/Arduino/RemoteLogging/src/RemoteLogging.cpp",
-    "examples/ESP32/PlatformIO/Arduino/ThreadSafety/src/ThreadSafety.cpp",
-    "examples/ESP32/PlatformIO/ESP-IDF/Logging/src/Logging.cpp",
-    "examples/ESP32/PlatformIO/ESP-IDF/ProgressBar/src/ProgressBar.cpp",
-    "examples/ESP32/PlatformIO/ESP-IDF/RemoteLogging/src/RemoteLogging.cpp",
-    "examples/ESP32/PlatformIO/ESP-IDF/ThreadSafety/src/ThreadSafety.cpp"
+    "examples/ESP/PlatformIO/Arduino/Logging/src/Logging.cpp",
+    "examples/ESP/PlatformIO/Arduino/ProgressBar/src/ProgressBar.cpp",
+    "examples/ESP/PlatformIO/Arduino/RemoteLogging/src/RemoteLogging.cpp",
+    "examples/ESP/PlatformIO/Arduino/ThreadSafety/src/ThreadSafety.cpp",
+    "examples/ESP/PlatformIO/ESP-IDF/Logging/src/Logging.cpp",
+    "examples/ESP/PlatformIO/ESP-IDF/ProgressBar/src/ProgressBar.cpp",
+    "examples/ESP/PlatformIO/ESP-IDF/RemoteLogging/src/RemoteLogging.cpp",
+    "examples/ESP/PlatformIO/ESP-IDF/ThreadSafety/src/ThreadSafety.cpp"
   ],
   "export": {
     "include": [
@@ -70,12 +70,13 @@
       "test",
       ".pio",
       ".vscode",
-      "examples/ArduinoAppLab",
-      "examples/ArduinoIDE",
+      "examples/UnoQ",
+      "examples/ESP/Arduino",
       "examples/Desktop",
       "examples/NRF",
-      "examples/STM32",
-      "examples/ESP32/ESP-IDF"
+      "examples/STM",
+      "examples/ESP/ESP-IDF",
+      "examples/ESP/PlatformIO"
     ]
   }
 }

@@ -32,30 +32,30 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - name: ESP32 Arduino — Logging
-            dir: examples/ESP32/PlatformIO/Arduino/Logging
-          - name: ESP32 Arduino — ProgressBar
-            dir: examples/ESP32/PlatformIO/Arduino/ProgressBar
-          - name: ESP32 Arduino — RemoteLogging
-            dir: examples/ESP32/PlatformIO/Arduino/RemoteLogging
-          - name: ESP32 Arduino — ThreadSafety
-            dir: examples/ESP32/PlatformIO/Arduino/ThreadSafety
-          - name: ESP32 ESP-IDF — Logging
-            dir: examples/ESP32/PlatformIO/ESP-IDF/Logging
-          - name: ESP32 ESP-IDF — ProgressBar
-            dir: examples/ESP32/PlatformIO/ESP-IDF/ProgressBar
-          - name: ESP32 ESP-IDF — RemoteLogging
-            dir: examples/ESP32/PlatformIO/ESP-IDF/RemoteLogging
-          - name: ESP32 ESP-IDF — ThreadSafety
-            dir: examples/ESP32/PlatformIO/ESP-IDF/ThreadSafety
+          - name: Arduino — Logging
+            env: arduino-logging
+          - name: Arduino — ProgressBar
+            env: arduino-progressbar
+          - name: Arduino — RemoteLogging
+            env: arduino-remotelogging
+          - name: Arduino — ThreadSafety
+            env: arduino-threadsafety
+          - name: ESP-IDF — Logging
+            env: espidf-logging
+          - name: ESP-IDF — ProgressBar
+            env: espidf-progressbar
+          - name: ESP-IDF — RemoteLogging
+            env: espidf-remotelogging
+          - name: ESP-IDF — ThreadSafety
+            env: espidf-threadsafety
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Build ${{ matrix.target.name }}
-        working-directory: ${{ matrix.target.dir }}
-        run: pio run
+        working-directory: examples/ESP/PlatformIO
+        run: pio run -e ${{ matrix.target.env }}
 
   # ─────────────────────────────────────────────────────────────────────────
   # Summary job — only runs when all matrix jobs succeed

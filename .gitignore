@@ -33,3 +33,9 @@ sdkconfig.defaults
 # Python
 __pycache__/
 *.pyc
+
+# Agents
+*.commandcode/
+
+# Zephyr examples — local ChronoLog module for in-tree builds
+examples/NRF/modules/
