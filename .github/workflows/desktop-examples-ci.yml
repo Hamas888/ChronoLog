@@ -13,7 +13,8 @@ jobs:
   build-examples:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository }}-ci:latest
+      # NOTE: all-lowercase required by Docker/GHCR
+      image: ghcr.io/hamas888/chronolog-ci:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

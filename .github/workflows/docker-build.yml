@@ -26,7 +26,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-ci
+  # Docker/GHCR requires all-lowercase — cannot use ${{ github.repository }}
+  IMAGE_NAME: hamas888/chronolog-ci
 
 jobs:
   build:
