@@ -1,7 +1,7 @@
 #define CHRONOLOG_THREAD_SAFE           1           // Enabled thread-safe logging
 #define CHRONOLOG_COLOR_ENABLE          1           // 0 = Disable colors for ANSII-incompatible terminals
 
-#include "../../../include/ChronoLog.h"
+#include "ChronoLog.h"
 #include <thread>
 #include <chrono>
 #include <atomic>
@@ -27,7 +27,7 @@ void sensorTask() {
     int taskId = 1;
     logger.info("Task %d: Sensor monitoring task started", taskId);
     
-    while (true) {
+    for (int i = 0; i < 6; i++) {
         sensorValue += getRandom(1, 10);
         
         // Multiple log levels to show thread safety across different message types
@@ -52,7 +52,7 @@ void networkTask() {
     int taskId = 2;
     logger.info("Task %d: Network monitoring task started", taskId);
     
-    while (true) {
+    for (int i = 0; i < 8; i++) {
         networkPackets += getRandom(1, 5);
         
         logger.debug("Task %d: Processing network packet #%d", taskId, networkPackets.load());
@@ -76,7 +76,7 @@ void systemTask() {
     int taskId = 3;
     logger.info("Task %d: System monitoring task started", taskId);
     
-    while (true) {
+    for (int i = 0; i < 5; i++) {
         systemEvents++;
         
         logger.debug("Task %d: System event #%d triggered", taskId, systemEvents.load());

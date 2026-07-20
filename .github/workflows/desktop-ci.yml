@@ -1,0 +1,33 @@
+name: Desktop CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    container:
+      # NOTE: all-lowercase required by Docker/GHCR
+      image: ghcr.io/hamas888/chronolog-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build ChronoLog and tests
+        run: cmake --build build --config Release --parallel
+
+      - name: Run desktop tests
+        run: ctest --test-dir build --output-on-failure

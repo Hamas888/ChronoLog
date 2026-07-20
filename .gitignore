@@ -1,7 +1,41 @@
-test/
-dist/
+# Build outputs
 build/
-.vscode/
+build-examples/
 CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependencies
 components/
-CMakeCache.text
+
+# Distributable artifacts
+dist/
+
+# Test output
+test/
+
+# ESP-IDF
+sdkconfig*
+sdkconfig.old
+sdkconfig.defaults
+
+# Python
+__pycache__/
+*.pyc
+
+# Agents
+*.commandcode/
+
+# Zephyr examples — local ChronoLog module for in-tree builds
+examples/NRF/modules/

@@ -4,6 +4,3 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(ThreadSafety)
 
 target_sources(app PRIVATE src/ThreadSafety.cpp)
-
-# Include ChronoLog headers
-target_include_directories(app PRIVATE ../../../include)

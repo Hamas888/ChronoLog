@@ -1,0 +1,33 @@
+name: Desktop Examples CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-examples:
+    runs-on: ubuntu-latest
+    container:
+      # NOTE: all-lowercase required by Docker/GHCR
+      image: ghcr.io/hamas888/chronolog-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure examples build
+        run: cmake -S . -B build-examples -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build desktop examples
+        run: cmake --build build-examples --config Release --parallel --target DesktopLogging DesktopProgressBar DesktopThreadSafety DesktopRemoteLogging
+
+      - name: Run desktop example tests
+        run: ctest --test-dir build-examples --output-on-failure

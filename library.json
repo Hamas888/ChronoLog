@@ -1,6 +1,6 @@
 {
   "name": "ChronoLog",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "description": "Cross-platform real-time logger for embedded systems and desktop. Features thread safety, progress bars, profiling, and colorized output for Linux, Windows, macOS, and Arduino (AVR/ESP32/STM32/nRF52).",
   "keywords": [
     "logger",
@@ -48,34 +48,25 @@
   "license": "MIT",
   "homepage": "https://github.com/Hamas888/ChronoLog",
   "examples": [
-    "examples/ESP32/PlatformIO/Arduino/Logging/src/Logging.cpp",
-    "examples/ESP32/PlatformIO/Arduino/ProgressBar/src/ProgressBar.cpp",
-    "examples/ESP32/PlatformIO/Arduino/RemoteLogging/src/RemoteLogging.cpp",
-    "examples/ESP32/PlatformIO/Arduino/ThreadSafety/src/ThreadSafety.cpp",
-    "examples/ESP32/PlatformIO/ESP-IDF/Logging/src/Logging.cpp",
-    "examples/ESP32/PlatformIO/ESP-IDF/ProgressBar/src/ProgressBar.cpp",
-    "examples/ESP32/PlatformIO/ESP-IDF/RemoteLogging/src/RemoteLogging.cpp",
-    "examples/ESP32/PlatformIO/ESP-IDF/ThreadSafety/src/ThreadSafety.cpp"
+    "examples/ESP/PlatformIO/platformio.ini",
+    "examples/Desktop/CMakeLists.txt"
   ],
   "export": {
     "include": [
       "src",
-      "examples",
+      "include",
+      "zephyr",
+      "Kconfig",
       "CMakeLists.txt",
       "library.json",
+      "library.properties",
       "LICENSE",
       "README.md"
     ],
     "exclude": [
       "test",
       ".pio",
-      ".vscode",
-      "examples/ArduinoAppLab",
-      "examples/ArduinoIDE",
-      "examples/Desktop",
-      "examples/NRF",
-      "examples/STM32",
-      "examples/ESP32/ESP-IDF"
+      ".vscode"
     ]
   }
 }
