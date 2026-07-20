@@ -47,6 +47,8 @@ A **cross-platform real-time logging library** for embedded systems that provide
 - **🎨 Colorized Output**: Color-coded log levels for better readability
 - **📋 Structured Logging**: Clean tabular format with timestamps, module names, log levels, and thread/task information
 - **🧵 Thread-Safe Operation**: Safe concurrent logging from multiple threads
+- **📦 Zephyr Module**: Discoverable via `west.yml` — just add to your manifest
+- **📚 Per-Platform READMEs**: Step-by-step guides for each build system in `examples/`
 - **📊 Multiple Log Levels**: DEBUG, INFO, WARN, ERROR, FATAL with runtime level control
 - **🎛️ Module-based Logging**: Create separate loggers for different modules with individual log levels
 - **📈 Progress Bar Support**: Built-in progress tracking with visual progress bars (requires `CHRONOLOG_PRO_FEATURES`)
@@ -146,17 +148,26 @@ lib_deps =
 
 ### nRF Connect SDK (Zephyr)
 
-1. Create a `modules` folder in your project root
-2. Navigate to the modules folder and clone the repository:
-   ```bash
-   cd modules
-   git clone https://github.com/Hamas888/ChronoLog.git
-   ```
-3. Add the subdirectory to your root `CMakeLists.txt`:
-   ```cmake
-   add_subdirectory(modules/ChronoLog)
-   target_link_libraries(app PRIVATE ChronoLog)
-   ```
+Add ChronoLog to your `west.yml`:
+
+```yaml
+manifest:
+  projects:
+    - name: chronolog
+      url: https://github.com/Hamas888/ChronoLog
+      revision: v1.2.0
+      path: modules/lib/chronolog
+  self:
+    path: app
+```
+
+Or without `west`, set `ZEPHYR_MODULES` before `find_package(Zephyr)`:
+
+```bash
+cmake -B build -DZEPHYR_MODULES=/path/to/ChronoLog
+```
+
+ChronoLog provides a `zephyr/module.yml` so it's auto-discovered and linked. Just `#include "ChronoLog.h"` in your source.
 
 ### STM32Cube Project
 
@@ -601,47 +612,66 @@ ChronoLog/
 │   ├── ChronoLogRemote.h           # Remote TCP logging — declarations
 │   ├── ChronoLogRemote.cpp         # Remote TCP logging — implementation
 │   └── ChronoLogUnoQ.h            # Arduino Uno Q (Zephyr) shims
+├── include/
+│   └── ChronoLog.h                 # Facade header (forwards to src/)
 ├── examples/
-│   ├── ArduinoAppLab/              # Arduino App Lab examples
-│   ├── ArduinoIDE/                 # Arduino IDE examples
-│   ├── Configuration/              # Feature configuration examples
-│   ├── Desktop/                    # Desktop (Linux/Windows/macOS) examples
-│   ├── ESP32/
-│   │   ├── ESP-IDF/               # Native ESP-IDF examples
-│   │   └── PlatformIO/            # PlatformIO examples (Arduino & ESP-IDF)
-│   ├── NRF/                       # nRF Connect SDK (Zephyr) examples
-│   └── STM32/                     # STM32 HAL examples
-├── docs/                           # Additional documentation
+│   ├── Desktop/                    # Native PC (Linux/macOS/Windows) — CMake + FetchContent
+│   ├── ESP/                        # ESP32 — 3 build systems
+│   │   ├── Arduino/               #   Arduino IDE (.ino sketches)
+│   │   ├── ESP-IDF/               #   ESP-IDF native (idf.py)
+│   │   └── PlatformIO/            #   PlatformIO (8 envs: Arduino + ESP-IDF)
+│   ├── NRF/                        # nRF52 / Zephyr — west + prj.conf
+│   ├── STM/                        # STM32 — CubeMX + CMake (Nucleo-L010RB)
+│   ├── UnoQ/                       # Arduino Uno Q (Zephyr-based)
+│   └── CMakeLists.txt              # Unified test runner
+├── zephyr/
+│   └── module.yml                  # Zephyr module descriptor
+├── tests/                          # Desktop test harness (CTest)
+├── .github/workflows/              # CI: Desktop, PlatformIO, Docker image
 ├── CMakeLists.txt                  # Multi-platform CMake configuration
-├── Kconfig                         # ESP-IDF Kconfig menu
+├── Kconfig                         # ESP-IDF / Zephyr Kconfig menu
+├── Dockerfile                      # CI Docker image (PlatformIO + CMake)
 ├── library.json                    # PlatformIO library manifest
 ├── library.properties              # Arduino library properties
-├── idf_component.yml               # ESP-IDF component manifest
-└── README.md
+└── idf_component.yml               # ESP-IDF component manifest
 ```
 
 ## 📜 Changelog
 
-### v1.2.0 (Current — `epic/v1.6.0-threading-and-quality`)
+### v1.2.0 (Current)
 
 **Bugs Fixed**
 
-- **ESP32 double-checked locking fix**: `portMUX_TYPE` in constructor changed from local to `static` — the per-instance spinlock was not actually synchronizing across threads on dual-core ESP32, allowing concurrent `xSemaphoreCreateMutex()` calls that leaked the first semaphore.
-- **Macro leak fix**: `#define vsnprintf` / `#define strncat` moved from public header `ChronoLogUnoQ.h` into `ChronoLog.cpp` — these global macros were silently replacing standard library functions in any translation unit that included ChronoLog.
-- **Progress bar newline race**: `progress()` now acquires the mutex around the entire sequence (bar + optional newline) instead of relying on `printProgress()`'s internal lock, which left the final `\n` exposed to interleaving.
-- **Remote log ordering**: Remote TCP send moved before `threadSafeUnlock()` in `print()` — serial output and remote output are now emitted under the same lock, guaranteeing consistent ordering.
+- **ESP32 double-checked locking fix**: `portMUX_TYPE` in constructor changed from local to `static` — concurrent `xSemaphoreCreateMutex()` calls on dual-core could leak the first semaphore.
+- **Macro leak fix**: `#define vsnprintf` / `#define strncat` moved from `ChronoLogUnoQ.h` into `ChronoLog.cpp` — these were replacing standard library functions in any translation unit that included ChronoLog.
+- **Progress bar newline race**: `progress()` now holds the mutex across the entire bar + newline sequence instead of relying on `printProgress()`'s internal lock.
+- **Remote log ordering**: TCP send moved before `threadSafeUnlock()` in `print()` — serial and remote output are now emitted under the same lock.
+- **Header guard conflict**: `include/ChronoLog.h` and `src/ChronoLog.h` both used `CHRONOLOG_H` — the facade blocked the real header. Changed facade to `CHRONOLOG_FACADE_H`.
+
+**New Features**
+
+- **Zephyr module support**: Added `zephyr/module.yml` — ChronoLog is now auto-discoverable via `west.yml` or `ZEPHYR_MODULES`.
+- **CI/CD pipeline**: Desktop CI, Desktop Examples CI, PlatformIO CI (8 environments), and Docker image build workflows. CI Docker image pre-caches all PlatformIO toolchains.
+- **Per-platform example READMEs**: Step-by-step build guides for ESP (3 build systems), STM32, and NRF examples.
+- **Desktop examples**: 4 standalone CMake examples with CTest validation — Logging, ProgressBar, RemoteLogging, ThreadSafety.
+- **STM32 examples**: Full CubeMX projects with `.ioc` files for Nucleo-L010RB — Logging, ProgressBar, ThreadSafety.
 
 **Design Improvements**
 
-- **Timestamp computed once**: `printInfo()` now receives pre-computed `time_buf` and `taskName` from its caller — the `CHRONOLOG_REMOTE_ENABLE` block no longer re-calls `getTimeStamp()` / `getCurrentTaskName()`, eliminating the ms-skew between serial and remote timestamps.
-- **Reduced code bloat**: `ChronoLogRemote` implementation moved from header-only to `ChronoLogRemote.cpp` — on embedded targets this saves ~600 bytes of code per translation unit.
-- **Buffer size raised**: `CHRONOLOG_BUFFER_LEN` default increased from 100 → 256 to prevent truncation of formatted messages with timestamp + module + task prefix.
-- **Safer defaults**: `#warning` emitted when `ChronoLogRemote.h` is included without `CHRONOLOG_REMOTE_ENABLE` being defined.
+- **Buffer size**: `CHRONOLOG_BUFFER_LEN` default increased from 100 → 256.
+- **ChronoLogRemote**: Implementation moved from header-only to `ChronoLogRemote.cpp` (~600 B saving per translation unit).
+- **Safer defaults**: `#warning` emitted when `ChronoLogRemote.h` is included without `CHRONOLOG_REMOTE_ENABLE`.
+- **Timestamp computed once**: `printInfo()` receives pre-computed `time_buf` and `taskName` — remote no longer re-calls time/task functions.
+
+**Example Reorganization**
+
+- Examples restructured by platform: `examples/ESP/` (ESP32), `examples/NRF/` (nRF52/Zephyr), `examples/STM/` (STM32), `examples/UnoQ/` (Arduino Uno Q).
+- PlatformIO examples simplified: single `platformio.ini` with 8 environments, `build_flags` for feature defines so library compilation matches example source.
 
 **Nits**
 
-- Include guard typo fixed: `CHRNOLOG_UNO_Q_H` → `CHRONOLOG_UNO_Q_H`
-- Level label shortened: `"WARNING"` → `"WARN"` for consistent 5-char alignment with `DEBUG`/`ERROR`/`FATAL`
+- Include guard typo: `CHRNOLOG_UNO_Q_H` → `CHRONOLOG_UNO_Q_H`
+- Level label: `"WARNING"` → `"WARN"` for 5-char alignment
 
 ---
 
@@ -775,21 +805,21 @@ act workflow_dispatch -W .github/workflows/desktop-examples-ci.yml
 
 ## 🛣️ Roadmap & Upcoming Features
 
-### 🔜 Next Major Features
-- **💾 Flash File Logging**: Log directly to flash memory with retrieval capabilities  
-- **⚡ Memory & Speed Optimization**: Enhanced performance for resource-constrained systems
-- **🔧 Robust 8-bit AVR Support**: Full compatibility with Arduino Uno, Nano, and other 8-bit platforms
+### 🔜 v1.3.0 — Configurable Output Backends
+- **Plugin-style backend system**: `logger.addBackend(Serial)`, `logger.addBackend(RTT)`, `logger.addBackend(FileSD)` — swap output destinations at runtime
+- **STM32CubeMX `.pack`**: CMSIS-Pack for STM32CubeMX registry — install ChronoLog from within CubeMX
+- **STM32CubeMX integration**: Documented `.ioc` workflow with UART + FreeRTOS configuration
+- **Zephyr module registry**: List ChronoLog in the official Zephyr module registry
 
-### 🎯 Advanced Features In My Mind
-- **📝 Log Filtering**: Built-in filtering and pattern matching for logs
-- **📊 Log Analytics**: Built-in log filtering and analysis tools
+### 🎯 Future Ideas
+- **Configurable output backends**: File I/O (SD card), RTT, semihosting, USB CDC
+- **Async / non-blocking mode**: Queue-based logging for ISR-safe and high-throughput paths
+- **📊 Log Filtering**: Built-in pattern matching and log analytics
 - **🔒 Encrypted Logging**: Secure log transmission and storage
-- **📱 Mobile App Integration**: Real-time log monitoring via smartphone apps
 
-### 📈 Performance Improvements
-- **🚀 Zero-copy Logging**: Minimize memory allocations for high-frequency logging
-- **⚙️ Compile-time Optimization**: Further reduction in code size and RAM usage
-- **🔄 Circular Buffer Support**: Efficient log rotation for continuous operation
+### 📈 Performance
+- **Zero-copy Logging**: Minimize allocations for high-frequency logging
+- **Circular Buffer Support**: Efficient log rotation for continuous operation
 
 **Want to influence the roadmap?** Share your ideas through [GitHub Issues](https://github.com/Hamas888/ChronoLog/issues) or reach out via [Patreon](https://patreon.com/hamas888) for direct feature discussions!
 
