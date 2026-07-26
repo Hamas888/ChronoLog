@@ -59,6 +59,17 @@
     #include <zephyr/kernel.h>
     #include <zephyr/sys/printk.h>
   #define CHRONOLOG_PLATFORM_ZEPHYR
+#elif defined(__arm__) && (defined(USE_HAL_DRIVER) || defined(USE_FULL_LL_DRIVER))
+  #include "main.h"
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <stdarg.h>
+  #include <string.h>
+  #if defined(osCMSIS) || defined(FREERTOS)
+    #define CHRONOLOG_STM32_FREERTOS
+    #include "cmsis_os.h"
+  #endif
+  #define CHRONOLOG_PLATFORM_STM32_HAL
 #elif defined(STM32F0) || defined(STM32F1) || defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || \
       defined(STM32G0) || defined(STM32G4) || defined(STM32H7) || defined(STM32L0) || defined(STM32L1) || \
       defined(STM32L4) || defined(STM32L5) || defined(STM32WB) || defined(STM32WL)

@@ -3,6 +3,14 @@ project(ChronoLog VERSION 1.2.0 LANGUAGES CXX)
 
 set(CHRONOLOG_VERSION 1.2.0)
 
+set(CHRONOLOG_IS_STM32 FALSE)
+if(CMAKE_SYSTEM_NAME STREQUAL "Generic" OR
+   CMAKE_C_COMPILER_TARGET MATCHES "arm-none-eabi" OR
+   CMAKE_CXX_COMPILER_TARGET MATCHES "arm-none-eabi" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|ARM|armv)")
+  set(CHRONOLOG_IS_STM32 TRUE)
+endif()
+
 # Check if we're building with Zephyr
 if(DEFINED ZEPHYR_BASE)
 
@@ -21,8 +29,20 @@ elseif(DEFINED ESP_PLATFORM OR DEFINED IDF_VER OR DEFINED ENV{IDF_PATH})
             "esp_event"
             "freertos"
     )
-    
-# STM32 / generic CMake project
+
+# STM32 / generic embedded CMake project
+elseif(CHRONOLOG_IS_STM32)
+    add_library(ChronoLog STATIC
+        src/ChronoLog.cpp
+        src/ChronoLogRemote.cpp
+    )
+    target_include_directories(ChronoLog PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    target_compile_features(ChronoLog PUBLIC cxx_std_17)
+    target_compile_definitions(ChronoLog PUBLIC
+        USE_HAL_DRIVER=1
+    )
+
+# Desktop/native CMake project
 else()
     add_library(ChronoLog STATIC
         src/ChronoLog.cpp
@@ -38,7 +58,7 @@ else()
 endif()
 
 # Desktop/native CMake tests and desktop examples
-if(NOT DEFINED ESP_PLATFORM AND NOT DEFINED IDF_VER AND NOT DEFINED ENV{IDF_PATH} AND NOT DEFINED ZEPHYR_BASE)
+if(NOT DEFINED ESP_PLATFORM AND NOT DEFINED IDF_VER AND NOT DEFINED ENV{IDF_PATH} AND NOT DEFINED ZEPHYR_BASE AND NOT CHRONOLOG_IS_STM32)
   enable_testing()
   add_subdirectory(tests)
   add_subdirectory(examples)
