@@ -47,7 +47,45 @@ menu "ChronoLog Configuration"
         default n
         help
             Enable or disable remote logging capabilities for the ChronoLog component.
-        
+
+    config CHRONOLOG_SINKS_ENABLE
+        bool "Log Sinks (file / custom output)"
+        default n
+        help
+            Enable the pluggable log sink interface and built-in sinks
+            (desktop rotating file sink, MCU LittleFS sink).
+
+    config CHRONOLOG_MAX_SINKS
+        int "Maximum number of registered sinks"
+        default 4
+        help
+            Max sinks in the fixed registry array (MCU). Desktop/ESP use a vector.
+
+    config CHRONOLOG_SINK_FILE_RETENTION_DAYS
+        int "File sink retention (days)"
+        default 7
+        help
+            Keep log files for this many days, then overwrite/rotate.
+
+    config CHRONOLOG_SINK_FILE_MAX_BYTES
+        int "File sink max bytes (0 = no cap)"
+        default 0
+        help
+            Per-file size cap; on exceed, rotate to backups.
+
+    config CHRONOLOG_SINK_FILE_ROTATIONS
+        int "File sink backup rotations"
+        default 3
+        help
+            Number of rotated backup files to keep.
+
+    config CHRONOLOG_SINK_FILE_CONDENSED
+        bool "File sink condensed format"
+        default y
+        help
+            Abbreviate levels (|I|), per-module header, thread registry. On by default
+            for MCU (small flash); desktop defaults to full-fidelity instead.
+
     config CHRONOLOG_BUFFER_LEN
         int "ChronoLog Buffer Length"
         default 256

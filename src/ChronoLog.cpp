@@ -499,8 +499,26 @@ void ChronoLogger::print(const char* levelStr, const char* color, const char* fm
     ChronoLogRemote::getInstance()->write(full_buf);
   #endif
 
+  #if CHRONOLOG_SINKS_ENABLE
+    // Build the structured line for sinks. Fields point at stack buffers that
+    // outlive the writeAll() call.
+    ChronoLogSinkLine line;
+    line.time    = time_buf;
+    line.module  = name;
+    line.level   = levelStr;
+    line.task    = taskName;
+    line.message = msg_buf;
+  #endif
+
   #if CHRONOLOG_THREAD_SAFE
     threadSafeUnlock();
+  #endif
+
+  #if CHRONOLOG_SINKS_ENABLE
+    // Fan out to registered sinks (file, network, custom) AFTER releasing the
+    // lock. writeAll() locks internally (re-entrant-safe: we're not holding it),
+    // and sinks must not call back into ChronoLogger.
+    ChronoLogSinkRegistry::instance().writeAll(line);
   #endif
 }
 

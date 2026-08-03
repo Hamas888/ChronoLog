@@ -17,6 +17,7 @@ license: "MIT"
 
 dependencies:
   idf: ">=5.0"
+  joltwallet/littlefs: "^1.14"
 
 examples:
   - path: examples/ESP/ESP-IDF/Logging

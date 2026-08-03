@@ -208,6 +208,8 @@
   #include "ChronoLogRemote.h"
 #endif // CHRONOLOG_REMOTE_ENABLE
 
+#include "ChronoLogSink.h"
+
 #if defined(CHRONOLOG_UNO_Q)
   #include "ChronoLogUnoQ.h"
 #endif // CHRONOLOG_UNO_Q
@@ -297,6 +299,12 @@ public:
     void plotWindow() const;
   #endif // CHRONOLOG_PRO_FEATURES
 
+  #if CHRONOLOG_THREAD_SAFE
+    // Static lock helpers - also used by the sink registry for thread-safe dispatch.
+    static void threadSafeLock();
+    static void threadSafeUnlock();
+  #endif // CHRONOLOG_THREAD_SAFE
+
 private:
   #if CHRONOLOG_PRO_FEATURES
     void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const;
@@ -316,11 +324,6 @@ private:
   #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
     UART_HandleTypeDef* uartHandler = nullptr;
   #endif
-
-  #if CHRONOLOG_THREAD_SAFE
-    static void threadSafeLock();
-    static void threadSafeUnlock();
-  #endif // CHRONOLOG_THREAD_SAFE
 
   static const char* getCurrentTaskName();
   void getTimeStamp(char* buffer, size_t len) const;

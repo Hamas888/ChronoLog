@@ -53,6 +53,7 @@ A **cross-platform real-time logging library** for embedded systems that provide
 - **🎛️ Module-based Logging**: Create separate loggers for different modules with individual log levels
 - **📈 Progress Bar Support**: Built-in progress tracking with visual progress bars (requires `CHRONOLOG_PRO_FEATURES`)
 - **📊 Graph Plotter**: ASCII graph plotting of numeric series — live sparklines and multi-row window charts (requires `CHRONOLOG_PRO_FEATURES`)
+- **📁 Log Sinks**: pluggable output sinks — desktop rotating file sink (`logs/*.txt`), MCU LittleFS sink (ESP-IDF/Arduino), and a Python fetch tool (`tools/chrono_dump.py`) — with signature detection, condensation, and retention (requires `CHRONOLOG_SINKS_ENABLE`)
 - **💻 Desktop Support**: Full compatibility with Linux, Windows, and macOS
 - **💾 Memory Efficient**: Minimal per-instance overhead (8 bytes RAM) with ~3 KB flash footprint
 - **🚀 Zero Configuration**: Works out-of-the-box on supported platforms
@@ -405,6 +406,56 @@ void reRenderWindows() {
 - ANSI live mode needs an ANSI-capable host (PuTTY, screen, minicom, a real terminal). Plain serial monitors get the single-line fallback — set `CHRONOLOG_PLOT_ANSI=0`.
 - For RAM-constrained MCUs, reduce `CHRONOLOG_PLOT_WINDOW` / `CHRONOLOG_PLOT_SERIES`.
 
+### Log Sinks (File / Custom Output)
+
+ChronoLog ships a **pluggable sink interface** so logs can be routed anywhere — file, network, flash, or a custom system — in addition to the console and remote TCP output. Requires `CHRONOLOG_SINKS_ENABLE=1`.
+
+```cpp
+#include "ChronoLog.h"
+#include "ChronoLogSink.h"
+#include "ChronoLogFileSink.h"        // desktop: rotating per-module file sink
+
+// Register the built-in desktop file sink.
+ChronoLogSinkRegistry::instance().add(&ChronoLogFileSink::instance());
+ChronoLogFileSink::instance().setLogsDir("logs");   // default
+ChronoLogFileSink::instance().setRetentionDays(7);  // keep 1 week, then overwrite
+ChronoLogFileSink::instance().setCondensed(false);  // full-fidelity (default)
+
+ChronoLogger app("MyApp", CHRONOLOG_LEVEL_DEBUG);
+app.info("this goes to console AND logs/MyApp.txt");
+```
+
+**Built-in sinks**
+
+| Sink | Platform | Output |
+|---|---|---|
+| `ChronoLogFileSink` | Desktop (Linux/Win/macOS) | `logs/<module>.txt`, full-fidelity by default, retention + rotation |
+| `ChronoLogLittleFsSink` | ESP-IDF + Arduino-ESP32/PlatformIO | compacted logs on LittleFS flash, UART fetch |
+
+**Compaction / condensation** (ON by default on MCU, OFF on desktop):
+- Abbreviated levels: `|I|` INFO, `|D|` DEBUG, `|W|` WARN, `|E|` ERROR, `|F|` FATAL, `|P|` PROGRESS.
+- Once-per-module header: `module = "MyModule"`, `created = ...`.
+- Once-per-thread registry (`T0`, `T1`, ...) on subsequent lines.
+- Every file starts with the signature `# chrono-log sig` so `tools/chrono_dump.py` can detect it.
+
+**Rotation / recycling**
+- `setRetentionDays(n)`: files older than `n` days are truncated/recreated (age-based; on MCU only when a real-time source is synced, else size-cap only).
+- `setMaxFileBytes(n)` + `setRotations(n)`: rotate to `<module>.1.txt`, `.2.txt`, ... (ring of backups).
+
+**Fetching MCU logs with `tools/chrono_dump.py`**
+
+```bash
+# MCU fetch mode: sends 'F' over UART, streams + decodes flash logs:
+python3 tools/chrono_dump.py --port /dev/ttyUSB0 --baud 460800 --out logs/
+# Desktop mode: parse/condense local logs/ directly:
+python3 tools/chrono_dump.py --dir logs/ --out logs_compact/
+python3 tools/chrono_dump.py            # prompts for a location, defaults to logs/*
+```
+
+The Python tool detects the signature, reconstructs console-equivalent lines, and expands condensed files. It's pure stdlib (pyserial optional).
+
+**Custom sinks:** implement `ChronoLogSink::write(const ChronoLogSinkLine&)` and register it. This is the stable extension point — on STM32/NRF or any other target, users write a custom sink to their own storage (flash/SD/EEPROM) until a native cross-platform storage sink is added.
+
 ### Remote Logging Example
 
 ```cpp
@@ -502,6 +553,7 @@ ChronoLog allows you to enable or disable features at compile time to optimize f
 #define CHRONOLOG_THREAD_SAFE 1             // Enable thread-safe operations (1 = enabled, 0 = disabled)
 #define CHRONOLOG_PRO_FEATURES 1            // Enable Pro features like progress bars (1 = enabled, 0 = disabled)
 #define CHRONOLOG_REMOTE_ENABLE 0           // Enable remote logging via TCP (1 = enabled, 0 = disabled)
+#define CHRONOLOG_SINKS_ENABLE 0            // Enable log sinks (file / custom output) (1 = enabled, 0 = disabled)
 
 // === Graph Plotter Configuration (Pro features only) ===
 #define CHRONOLOG_PLOT_WINDOW 64            // Samples retained per plot series (ring buffer)
@@ -788,6 +840,7 @@ ChronoLog/
 | `chronoLogMutex` | Zephyr/Uno Q (`k_mutex`) | ~16 B |
 | `threadsMap[10]` | Uno Q only | 80 B |
 | `plotSeries[4]` (plot registry) | Pro features only | ~1.6 KB (`4 × (16 B name + 64 × 4 B samples + 64 × 4 B timestamps)`) |
+| `ChronoLogSinkRegistry::sinks_` | Sinks enabled | `std::vector` (desktop/ESP) or `sinks_[CHRONOLOG_MAX_SINKS]` fixed array (MCU, default 4 → 16 B) |
 
 ### Stack usage (hot path)
 
@@ -795,6 +848,7 @@ ChronoLog/
 |-----------|-------|----------------|
 | `print()` → `printInfo()` | ~300 B | `msg_buf[256]` + `time_buf[16]` |
 | `print()` + remote | ~820 B | `msg_buf[256]` + `full_buf[512]` |
+| `print()` + sink dispatch | ~400 B | `msg_buf[256]` + `ChronoLogSinkLine` (5 pointers) |
 | `progress()` → `printProgress()` | ~120 B | `prog_buf[100]` + `time_buf[16]` |
 | `plot()` → `renderSparkline()` | ~400 B | `line_buf[4 + 64×4 + 128]` |
 | `plot()` / `plotWindow()` → `renderWindowChart()` | ~400 B | `line_buf[64 + 64×4 + 128]` |
@@ -811,8 +865,11 @@ ChronoLog/
 | `getTimeStamp()` + `getCurrentTaskName()` | ~450 B |
 | `threadSafeLock()` / `threadSafeUnlock()` | ~200 B |
 | Remote TCP impl | ~600 B |
+| Sink registry + dispatch | ~300 B |
+| `ChronoLogFileSink` (desktop) | ~800 B |
+| `ChronoLogLittleFsSink` (ESP) | ~700 B |
 | Uno Q shims | ~300 B |
-| **Total** | **~3.0–3.5 KB** |
+| **Total** | **~3.0–4.3 KB** (sinks add ~1.5–1.8 KB when enabled) |
 
 > Stack is allocated at call-time, not per-instance. With `CHRONOLOG_MODE=0`, all code compiles to zero bytes.
 
