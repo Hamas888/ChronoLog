@@ -36,6 +36,13 @@
     bool initialized;
   };
   static PlotSeries plotSeries[CHRONOLOG_PLOT_SERIES];
+
+  // Plot glyphs, low to high. Override CHRONOLOG_PLOT_BLOCKS with an 8-element
+  // initializer for ASCII-only terminals, e.g. { " ", ".", ":", "-", "=", "+", "*", "#" }.
+  #ifndef CHRONOLOG_PLOT_BLOCKS
+    #define CHRONOLOG_PLOT_BLOCKS                     { "\xE2\x96\x81", "\xE2\x96\x82", "\xE2\x96\x83", "\xE2\x96\x84", "\xE2\x96\x85", "\xE2\x96\x86", "\xE2\x96\x87", "\xE2\x96\x88" }  // ▁▂▃▄▅▆▇█
+  #endif
+  static const char* const plotBlocks[8] = CHRONOLOG_PLOT_BLOCKS;
 #endif
 
 #if CHRONOLOG_MODE
@@ -503,7 +510,7 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
       int idx = (int)((v - min) / range * 7.0f);
       if (idx < 0) idx = 0;
       if (idx > 7) idx = 7;
-      pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " %s", CHRONOLOG_PLOT_BLOCKS[idx]);
+      pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " %s", plotBlocks[idx]);
       if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;  // Never point past the buffer
     }
     pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " | min=%.1f max=%.1f last=%.1f",
@@ -555,7 +562,7 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
         if (cell < 0) cell = 0;
         if (cell > CHRONOLOG_PLOT_ROWS - 1) cell = CHRONOLOG_PLOT_ROWS - 1;
         pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " %s",
-                        (cell >= row) ? CHRONOLOG_PLOT_BLOCKS[7] : " ");
+                        (cell >= row) ? plotBlocks[7] : " ");
         if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;  // Never point past the buffer
       }
       pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, "\n");
