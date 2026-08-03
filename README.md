@@ -347,11 +347,14 @@ void processWithProgress() {
 
 // Enable pro features in your build configuration
 // #define CHRONOLOG_PRO_FEATURES 1
+// #define CHRONOLOG_PLOT_ANSI 1    // Live multi-row chart (ANSI terminal). 0 = single-line sparkline.
 
 ChronoLogger logger("Plotter", CHRONOLOG_LEVEL_PRO_FEATURES);
 
 void plotLiveData() {
-    // Live sparkline: push one sample at a time (updates in place with '\r')
+    // Live chart: push one sample at a time.
+    // With CHRONOLOG_PLOT_ANSI=1 it redraws a full multi-row chart in place (needs ANSI terminal).
+    // With CHRONOLOG_PLOT_ANSI=0 it draws a single-line sparkline overwritten with '\r'.
     logger.plot("temp", 24.5f);
     logger.plot("temp", 25.1f);
     logger.plot("temp", 23.8f);
@@ -363,6 +366,13 @@ void plotBatchData() {
     logger.plot("accel", accel, 8);
 }
 
+void plotTimeBucketed() {
+    // Time-windowed batch: X-axis bucketed into 8 time slices (samples averaged per bucket)
+    float accel[32];
+    // ... fill accel ...
+    logger.plot("accelT", accel, 32, 8);
+}
+
 void reRenderWindows() {
     logger.plotWindow("temp");   // Re-render one series as a row chart
     logger.plotWindow();         // Re-render all registered series
@@ -370,6 +380,30 @@ void reRenderWindows() {
 ```
 
 > **Note**: Plots require `CHRONOLOG_PRO_FEATURES` to be enabled and the logger level set to `CHRONOLOG_LEVEL_PRO_FEATURES` or higher. Plot output is terminal-only (not sent over the remote TCP channel). Sample buffers are compile-time configurable via `CHRONOLOG_PLOT_WINDOW` / `CHRONOLOG_PLOT_SERIES` / `CHRONOLOG_PLOT_ROWS`.
+
+#### Output layout
+- **Live multi-row chart** (`CHRONOLOG_PLOT_ANSI=1`): `plot(series, value)` renders a full chart (header + Y-axis row labels + time axis) and redraws it in place with ANSI cursor-up/erase-line. Intended for a single live series.
+- **Single-line sparkline** (`CHRONOLOG_PLOT_ANSI=0`, the default on bare UART): `plot(series, value)` prints a `\r`-overwritten line with the Y-range bracketed:
+  ```
+  temp | min 15.1 | ▁ ▂ ▃ ▄ ▅ ▆ ▇ █ ▁ ▂ ▃ ▄ | max 24.9 | last 24.4 | t 00:00:03
+  ```
+- **Window chart** (`plotWindow()` / batch `plot()`): header line + `CHRONOLOG_PLOT_ROWS` rows with `| max` / `| min` Y-axis labels on the edges, plus a bottom time-range line:
+  ```
+  accel  window=32  min=57.4  max=143.5  last=84.4
+   4 |         █ █ █                       █ █                | max 143.5
+   3 |   █ █ █ █ █ █ █                   █ █ █ █ █ █ █        |
+   2 | █ █ █ █ █ █ █ █                 █ █ █ █ █ █ █ █ █      |
+   1 | █ █ █ █ █ █ █ █ █ █ █ █ █     █ █ █ █ █ █ █ █ █ █ █   |
+   0 | █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ | min 57.4
+  t 00:00:00 to 00:00:03
+  ```
+  The `timeWindowSec` parameter on `plot()` buckets the X-axis by time (columns = time slices), which also applies to the live chart.
+
+#### MCU UART / baud guidance
+- A single-line sparkline at 64 columns is roughly **~300 bytes/line**; a full window chart of 5 rows is roughly **~1.5 KB/render**.
+- **Recommended:** `115200 baud` (≈11.5 KB/s) for typical plots. Use `460800` or `921600` for high-rate live charts (>50 samples/s in ANSI mode) or large windows.
+- ANSI live mode needs an ANSI-capable host (PuTTY, screen, minicom, a real terminal). Plain serial monitors get the single-line fallback — set `CHRONOLOG_PLOT_ANSI=0`.
+- For RAM-constrained MCUs, reduce `CHRONOLOG_PLOT_WINDOW` / `CHRONOLOG_PLOT_SERIES`.
 
 ### Remote Logging Example
 
@@ -473,6 +507,7 @@ ChronoLog allows you to enable or disable features at compile time to optimize f
 #define CHRONOLOG_PLOT_WINDOW 64            // Samples retained per plot series (ring buffer)
 #define CHRONOLOG_PLOT_SERIES 4             // Maximum number of named plot series tracked simultaneously
 #define CHRONOLOG_PLOT_ROWS 5               // Chart height (rows) used by plotWindow()
+#define CHRONOLOG_PLOT_ANSI 0               // Live multi-row chart for plot() (1 = ANSI terminal, 0 = single-line sparkline)
 // #define CHRONOLOG_PLOT_BLOCKS { " ", ".", ":", "-", "=", "+", "*", "#" }  // 8 glyphs, low to high; ASCII-only terminals (default: ▁▂▃▄▅▆▇█)
 
 // Note: The following features are automatically detected based on platform:
@@ -638,6 +673,7 @@ int main(void) {
 - Ensure logger level is `CHRONOLOG_LEVEL_PRO_FEATURES` or higher
 - Plots are terminal-only — they are not sent over the remote TCP channel
 - On ASCII-only terminals, set `CHRONOLOG_PLOT_BLOCKS` to an 8-element array of single-char strings, e.g. `{ " ", ".", ":", "-", "=", "+", "*", "#" }`
+- If the live `plot()` output shows raw escape sequences (like `[?25l`) instead of a moving chart, your terminal isn't ANSI-capable — set `CHRONOLOG_PLOT_ANSI=0` for the single-line `\r` fallback
 - For RAM-constrained targets, reduce `CHRONOLOG_PLOT_WINDOW` and `CHRONOLOG_PLOT_SERIES`
 
 **Compilation errors on platform detection**
@@ -751,7 +787,7 @@ ChronoLog/
 | `chronoLogMutex` | ESP-IDF/ESP (handle) | 4 B |
 | `chronoLogMutex` | Zephyr/Uno Q (`k_mutex`) | ~16 B |
 | `threadsMap[10]` | Uno Q only | 80 B |
-| `plotSeries[4]` (plot registry) | Pro features only | ~1.1 KB (`4 × (16 B name + 64 × 4 B samples)`) |
+| `plotSeries[4]` (plot registry) | Pro features only | ~1.6 KB (`4 × (16 B name + 64 × 4 B samples + 64 × 4 B timestamps)`) |
 
 ### Stack usage (hot path)
 
@@ -760,8 +796,8 @@ ChronoLog/
 | `print()` → `printInfo()` | ~300 B | `msg_buf[256]` + `time_buf[16]` |
 | `print()` + remote | ~820 B | `msg_buf[256]` + `full_buf[512]` |
 | `progress()` → `printProgress()` | ~120 B | `prog_buf[100]` + `time_buf[16]` |
-| `plot()` → `renderSparkline()` | ~330 B | `line_buf[4 + 64×4 + 64]` |
-| `plot()` / `plotWindow()` → `renderWindowChart()` | ~320 B | `line_buf[64 + 64×4]` |
+| `plot()` → `renderSparkline()` | ~400 B | `line_buf[4 + 64×4 + 128]` |
+| `plot()` / `plotWindow()` → `renderWindowChart()` | ~400 B | `line_buf[64 + 64×4 + 128]` |
 
 ### Estimated flash (`.text`)
 

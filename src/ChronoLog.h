@@ -190,6 +190,18 @@
   #endif
 #endif // CHRONOLOG_PLOT_ROWS
 
+// Live ANSI chart mode: when enabled, plot(series, value) redraws a full multi-row
+// chart in place using ANSI cursor-up/erase-line sequences (desktop terminals,
+// PuTTY, screen, minicom). When disabled (bare UART / plain serial monitors),
+// plot() falls back to a single-line sparkline overwritten with '\r'.
+#ifndef CHRONOLOG_PLOT_ANSI
+  #ifdef CONFIG_CHRONOLOG_PLOT_ANSI
+    #define CHRONOLOG_PLOT_ANSI                        CONFIG_CHRONOLOG_PLOT_ANSI
+  #else
+    #define CHRONOLOG_PLOT_ANSI                        0                                                               // Set to 1 for ANSI-capable terminals
+  #endif
+#endif // CHRONOLOG_PLOT_ANSI
+
 #if CHRONOLOG_REMOTE_ENABLE
   #include "ChronoLogRemote.h"
 #endif // CHRONOLOG_REMOTE_ENABLE
@@ -275,8 +287,10 @@ public:
   #if CHRONOLOG_PRO_FEATURES
     void progress(const uint32_t current, const uint32_t total, const char* title) const;
 
-    void plot(const char* series, float value) const;
-    void plot(const char* series, const float* values, size_t count) const;
+    // timeWindowSec > 0: time-bucketed X-axis (samples averaged per time slice).
+    // timeWindowSec == 0 (default): per-sample X-axis.
+    void plot(const char* series, float value, uint32_t timeWindowSec = 0) const;
+    void plot(const char* series, const float* values, size_t count, uint32_t timeWindowSec = 0) const;
     void plotWindow(const char* series) const;
     void plotWindow() const;
   #endif // CHRONOLOG_PRO_FEATURES
@@ -285,9 +299,11 @@ private:
   #if CHRONOLOG_PRO_FEATURES
     void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const;
     PlotSeries* findPlotSeries(const char* series) const;
-    void renderSparkline(const char* series) const;
+    void renderSparkline(const char* series, uint32_t timeWindowSec) const;
     void renderWindowChart(const char* series) const;
     void outputPlotLine(const char* line) const;
+    uint32_t getUptimeMs() const;
+    void formatElapsed(char* buffer, size_t len, uint32_t elapsedSec) const;
   #endif // CHRONOLOG_PRO_FEATURES
 
   const char* name;
@@ -324,8 +340,8 @@ public:
   #if CHRONOLOG_PRO_FEATURES
     void progress(uint32_t current, uint32_t total, const char* title) const {}
 
-    void plot(const char* series, float value) const {}
-    void plot(const char* series, const float* values, size_t count) const {}
+    void plot(const char* series, float value, uint32_t timeWindowSec = 0) const {}
+    void plot(const char* series, const float* values, size_t count, uint32_t timeWindowSec = 0) const {}
     void plotWindow(const char* series) const {}
     void plotWindow() const {}
   #endif // CHRONOLOG_PRO_FEATURES

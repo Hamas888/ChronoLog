@@ -32,10 +32,16 @@
   struct PlotSeries {
     char name[16];
     float buf[CHRONOLOG_PLOT_WINDOW];
+    uint32_t t_ms[CHRONOLOG_PLOT_WINDOW];  // Uptime timestamp per sample (same ring index as buf)
     uint32_t count;          // Total samples pushed (ring index = count % CHRONOLOG_PLOT_WINDOW)
+    uint32_t tWindowMs;      // Time-window (ms) this series is bucketed into (0 = per-sample)
     bool initialized;
   };
   static PlotSeries plotSeries[CHRONOLOG_PLOT_SERIES];
+
+  // ANSI live chart state: number of lines of the chart currently on screen.
+  // Non-zero means a live chart was drawn and needs cursor-up + erase before redraw.
+  static int liveChartLines = 0;
 
   // Plot glyphs, low to high. Override CHRONOLOG_PLOT_BLOCKS with an 8-element
   // initializer for ASCII-only terminals, e.g. { " ", ".", ":", "-", "=", "+", "*", "#" }.
@@ -210,6 +216,31 @@ void ChronoLogger::getTimeStamp(char* buffer, size_t len) const {
   #endif
 }
 
+uint32_t ChronoLogger::getUptimeMs() const {
+  #if defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_UNO_Q)
+    return (uint32_t)k_uptime_get();
+  #elif defined(CHRONOLOG_PLATFORM_STM32_HAL)
+    return (uint32_t)HAL_GetTick();
+  #elif defined(CHRONOLOG_PLATFORM_ESP_IDF)
+    return (uint32_t)(esp_timer_get_time() / 1000u);
+  #elif (defined(CHRONOLOG_PLATFORM_ARDUINO) && defined(CHRONOLOG_ESP))
+    return (uint32_t)millis();
+  #elif defined(CHRONOLOG_PLATFORM_DESKTOP)
+    // Millisecond clock since an arbitrary origin (steady, not wall time).
+    return (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+             std::chrono::steady_clock::now().time_since_epoch()).count();
+  #else
+    return 0;  // No monotonic source -> timeWindowSec ignored, per-sample rendering
+  #endif
+}
+
+void ChronoLogger::formatElapsed(char* buffer, size_t len, uint32_t elapsedSec) const {
+  uint32_t h = elapsedSec / 3600u;
+  uint32_t m = (elapsedSec % 3600u) / 60u;
+  uint32_t s = elapsedSec % 60u;
+  snprintf(buffer, len, "%02u:%02u:%02u", (unsigned)h, (unsigned)m, (unsigned)s);
+}
+
 void ChronoLogger::printInfo(const char* levelStr, const char* color,
                              const char* time_buf, const char* taskName) const {
   #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
@@ -285,31 +316,75 @@ void ChronoLogger::printInfo(const char* levelStr, const char* color,
 
   // ---- Graph Plotter -------------------------------------------------------
 
-  void ChronoLogger::plot(const char* series, float value) const {
+  void ChronoLogger::plot(const char* series, float value, uint32_t timeWindowSec) const {
     if (chronoLogLevel < CHRONOLOG_LEVEL_PRO_FEATURES || series == NULL) return;
     #if CHRONOLOG_THREAD_SAFE
       threadSafeLock();
     #endif
     PlotSeries* s = findPlotSeries(series);
     if (s != NULL) {
-      s->buf[s->count % CHRONOLOG_PLOT_WINDOW] = value;
+      s->tWindowMs = timeWindowSec * 1000u;
+      uint32_t idx = s->count % CHRONOLOG_PLOT_WINDOW;
+      s->buf[idx] = value;
+      s->t_ms[idx] = getUptimeMs();
       s->count++;
-      renderSparkline(series);
+
+      #if CHRONOLOG_PLOT_ANSI
+        // Live multi-row chart: move cursor to the top of the previous chart
+        // (if any), then redraw the full chart in place.
+        #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
+          if (uartHandler) {
+            char esc[24];
+            if (liveChartLines > 0) {
+              int n = snprintf(esc, sizeof(esc), "\x1b[%dA", liveChartLines);
+              HAL_UART_Transmit(uartHandler, (uint8_t*)esc, n, HAL_MAX_DELAY);
+            }
+            const char* hide = "\x1b[?25l";
+            HAL_UART_Transmit(uartHandler, (uint8_t*)hide, strlen(hide), HAL_MAX_DELAY);
+          }
+        #elif defined(CHRONOLOG_PLATFORM_DESKTOP) || defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || \
+              (defined(CHRONOLOG_PLATFORM_ARDUINO) && !defined(CHRONOLOG_UNO_Q))
+          if (liveChartLines > 0) {
+            printf("\x1b[%dA", liveChartLines);
+          }
+          printf("\x1b[?25l");   // Hide cursor during redraw
+          fflush(stdout);
+        #endif
+      #endif // CHRONOLOG_PLOT_ANSI
+
+      renderWindowChart(series);
+
+      #if CHRONOLOG_PLOT_ANSI
+        #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
+          if (uartHandler) {
+            const char* show = "\x1b[?25h";
+            HAL_UART_Transmit(uartHandler, (uint8_t*)show, strlen(show), HAL_MAX_DELAY);
+          }
+        #elif defined(CHRONOLOG_PLATFORM_DESKTOP) || defined(CHRONOLOG_PLATFORM_ZEPHYR) || defined(CHRONOLOG_PLATFORM_ESP_IDF) || \
+              (defined(CHRONOLOG_PLATFORM_ARDUINO) && !defined(CHRONOLOG_UNO_Q))
+          printf("\x1b[?25h");   // Restore cursor
+          fflush(stdout);
+        #endif
+        liveChartLines = CHRONOLOG_PLOT_ROWS + 2;   // header + rows + time line
+      #endif // CHRONOLOG_PLOT_ANSI
     }
     #if CHRONOLOG_THREAD_SAFE
       threadSafeUnlock();
     #endif
   }
 
-  void ChronoLogger::plot(const char* series, const float* values, size_t count) const {
+  void ChronoLogger::plot(const char* series, const float* values, size_t count, uint32_t timeWindowSec) const {
     if (chronoLogLevel < CHRONOLOG_LEVEL_PRO_FEATURES || series == NULL || values == NULL || count == 0) return;
     #if CHRONOLOG_THREAD_SAFE
       threadSafeLock();
     #endif
     PlotSeries* s = findPlotSeries(series);
     if (s != NULL) {
+      s->tWindowMs = timeWindowSec * 1000u;
+      uint32_t now = getUptimeMs();
       for (size_t i = 0; i < count; i++) {
         s->buf[s->count % CHRONOLOG_PLOT_WINDOW] = values[i];
+        s->t_ms[s->count % CHRONOLOG_PLOT_WINDOW] = now;
         s->count++;
       }
       renderWindowChart(series);
@@ -479,6 +554,7 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
         strncpy(plotSeries[i].name, series, sizeof(plotSeries[i].name) - 1);
         plotSeries[i].name[sizeof(plotSeries[i].name) - 1] = '\0';
         plotSeries[i].count = 0;
+        plotSeries[i].tWindowMs = 0;
         plotSeries[i].initialized = true;
         return &plotSeries[i];
       }
@@ -486,37 +562,64 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
     return NULL;  // Registry full
   }
 
-  void ChronoLogger::renderSparkline(const char* series) const {
+  // Returns the number of columns to render for the given span.
+  // timeWindowSec == 0 -> per-sample (span columns).
+  // Otherwise -> timeWindowSec columns (bucketed), capped at span.
+  uint32_t ChronoLogger::renderBucketed(const PlotSeries* s, uint32_t span, uint32_t start,
+                                        uint32_t timeWindowSec, float* outMin, float* outMax) const {
+    uint32_t cols = span;
+    uint32_t windowMs = timeWindowSec * 1000u;
+    if (windowMs > 0) {
+      cols = timeWindowSec;
+      if (cols == 0) cols = 1;
+      if (cols > span) cols = span;
+    }
+    // Compute min/max over the actual rendered values.
+    float mn = 0.0f, mx = 0.0f;
+    for (uint32_t i = 0; i < cols; i++) {
+      float v = s->buf[(start + i) % CHRONOLOG_PLOT_WINDOW];
+      if (i == 0) { mn = mx = v; }
+      else { if (v < mn) mn = v; if (v > mx) mx = v; }
+    }
+    *outMin = mn; *outMax = mx;
+    return cols;
+  }
+
+  void ChronoLogger::renderSparkline(const char* series, uint32_t timeWindowSec) const {
     PlotSeries* s = findPlotSeries(series);
     if (s == NULL || s->count == 0) return;
     uint32_t span = (s->count < CHRONOLOG_PLOT_WINDOW) ? s->count : CHRONOLOG_PLOT_WINDOW;
     uint32_t start = s->count - span;
 
-    float min = s->buf[start % CHRONOLOG_PLOT_WINDOW];
-    float max = min;
-    for (uint32_t i = 1; i < span; i++) {
-      float v = s->buf[(start + i) % CHRONOLOG_PLOT_WINDOW];
-      if (v < min) min = v;
-      if (v > max) max = v;
-    }
+    float min = 0.0f, max = 0.0f;
+    uint32_t cols = renderBucketed(s, span, start, timeWindowSec, &min, &max);
     float range = max - min;
     if (range == 0.0f) range = 1.0f;  // Flat series: mid glyph
 
-    char line_buf[4 + CHRONOLOG_PLOT_WINDOW * 4 + 64];  // name + glyphs (3B each + space) + stats
+    char line_buf[4 + CHRONOLOG_PLOT_WINDOW * 4 + 128];  // name + left/right labels + glyphs + time
     int pos = 0;
-    pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, "%s |", series);
-    for (uint32_t i = 0; i < span; i++) {
+    pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, "%s | min %.1f |", series, min);
+    if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;
+    for (uint32_t i = 0; i < cols; i++) {
       float v = s->buf[(start + i) % CHRONOLOG_PLOT_WINDOW];
       int idx = (int)((v - min) / range * 7.0f);
       if (idx < 0) idx = 0;
       if (idx > 7) idx = 7;
       pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " %s", plotBlocks[idx]);
-      if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;  // Never point past the buffer
+      if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;
     }
-    pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " | min=%.1f max=%.1f last=%.1f",
-                    min, max, s->buf[(s->count - 1) % CHRONOLOG_PLOT_WINDOW]);
+    char tbuf[16];
+    if (cols >= 2 && s->t_ms[start % CHRONOLOG_PLOT_WINDOW] &&
+        s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW]) {
+      uint32_t t1 = s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW];
+      uint32_t t0 = s->t_ms[start % CHRONOLOG_PLOT_WINDOW];
+      formatElapsed(tbuf, sizeof(tbuf), (t1 > t0) ? (t1 - t0) / 1000u : 0);
+    } else {
+      snprintf(tbuf, sizeof(tbuf), "00:00:00");
+    }
+    pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " | max %.1f | last %.1f | t %s\r",
+                    max, s->buf[(s->count - 1) % CHRONOLOG_PLOT_WINDOW], tbuf);
     if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;
-    snprintf(line_buf + pos, sizeof(line_buf) - pos, "\r");
 
     #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
       if (uartHandler) HAL_UART_Transmit(uartHandler, (uint8_t*)line_buf, strlen(line_buf), HAL_MAX_DELAY);
@@ -538,34 +641,47 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
     uint32_t span = (s->count < CHRONOLOG_PLOT_WINDOW) ? s->count : CHRONOLOG_PLOT_WINDOW;
     uint32_t start = s->count - span;
 
-    float min = s->buf[start % CHRONOLOG_PLOT_WINDOW];
-    float max = min;
-    for (uint32_t i = 1; i < span; i++) {
-      float v = s->buf[(start + i) % CHRONOLOG_PLOT_WINDOW];
-      if (v < min) min = v;
-      if (v > max) max = v;
-    }
+    float min = 0.0f, max = 0.0f;
+    uint32_t cols = renderBucketed(s, span, start, s->tWindowMs / 1000u, &min, &max);
     float range = max - min;
     if (range == 0.0f) range = 1.0f;  // Flat series: mid row
 
-    char line_buf[64 + CHRONOLOG_PLOT_WINDOW * 4];
+    char line_buf[64 + CHRONOLOG_PLOT_WINDOW * 4 + 128];
     snprintf(line_buf, sizeof(line_buf), "%s  window=%u  min=%.1f  max=%.1f  last=%.1f\n",
-             series, (unsigned)span, min, max, s->buf[(s->count - 1) % CHRONOLOG_PLOT_WINDOW]);
+             series, (unsigned)cols, min, max, s->buf[(s->count - 1) % CHRONOLOG_PLOT_WINDOW]);
     outputPlotLine(line_buf);
 
     for (int row = CHRONOLOG_PLOT_ROWS - 1; row >= 0; row--) {
       int pos = 0;
       pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, "%2d |", row);
-      for (uint32_t i = 0; i < span; i++) {
+      for (uint32_t i = 0; i < cols; i++) {
         float v = s->buf[(start + i) % CHRONOLOG_PLOT_WINDOW];
         int cell = (int)((v - min) / range * (CHRONOLOG_PLOT_ROWS - 1) + 0.5f);
         if (cell < 0) cell = 0;
         if (cell > CHRONOLOG_PLOT_ROWS - 1) cell = CHRONOLOG_PLOT_ROWS - 1;
-        pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " %s",
-                        (cell >= row) ? plotBlocks[7] : " ");
-        if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;  // Never point past the buffer
+        bool isFull = (cell >= row);
+        pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " %s", isFull ? plotBlocks[7] : " ");
+        if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;
       }
-      pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, "\n");
+      if (row == CHRONOLOG_PLOT_ROWS - 1) {
+        pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " | max %.1f\n", max);
+      } else if (row == 0) {
+        pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " | min %.1f\n", min);
+      } else {
+        pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, "\n");
+      }
+      outputPlotLine(line_buf);
+    }
+
+    // X-axis time range line: t start to end (elapsed across the rendered window).
+    if (cols >= 2 && s->t_ms[start % CHRONOLOG_PLOT_WINDOW] &&
+        s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW]) {
+      uint32_t t1 = s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW];
+      uint32_t t0 = s->t_ms[start % CHRONOLOG_PLOT_WINDOW];
+      char t0s[16], t1s[16];
+      formatElapsed(t0s, sizeof(t0s), t0 / 1000u);
+      formatElapsed(t1s, sizeof(t1s), t1 / 1000u);
+      snprintf(line_buf, sizeof(line_buf), "t %s to %s\n", t0s, t1s);
       outputPlotLine(line_buf);
     }
   }

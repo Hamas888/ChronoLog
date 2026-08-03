@@ -107,6 +107,7 @@ int main() {
         plotter.plot("temp", 19.0f);
         float series[8] = { 1.0f, 2.0f, 3.0f, 2.0f, 5.0f, 4.0f, 3.0f, 6.0f };
         plotter.plot("samples", series, 8);
+        plotter.plot("bucketed", series, 8, 4);   // time-bucketed into 4 columns
         plotter.plotWindow("temp");
         plotter.plotWindow("samples");
         plotter.plotWindow();
@@ -120,11 +121,15 @@ int main() {
     std::vector<const char*> plotExpectations = {
         "temp",
         "samples",
-        "min=",
+        "bucketed",
+        "min=",      // header line still has min=
         "max=",
         "last=",
-        "window=8",
-        "\xE2\x96\x88"  // UTF-8 full block glyph (█)
+        "window=8",  // samples series: 8 columns
+        "\xE2\x96\x88",          // UTF-8 full block glyph (█)
+        "| min",     // window chart Y-axis row label
+        "| max",     // window chart Y-axis row label
+        "t "         // time axis annotation
     };
 
     for (const char* expected : plotExpectations) {
@@ -133,6 +138,15 @@ int main() {
             return 2;
         }
     }
+
+    // With CHRONOLOG_PLOT_ANSI enabled, the live plot() path emits ANSI escape
+    // sequences (cursor-up + hide/show cursor).
+    #if CHRONOLOG_PLOT_ANSI
+        if (plotOutput.find("\x1b[") == std::string::npos) {
+            std::fprintf(stderr, "Missing ANSI escape sequence in live plot output\n");
+            return 2;
+        }
+    #endif
 
     return 0;
 }
