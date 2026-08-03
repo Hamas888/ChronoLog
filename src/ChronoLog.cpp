@@ -243,6 +243,11 @@ void ChronoLogger::formatElapsed(char* buffer, size_t len, uint32_t elapsedSec) 
 
 void ChronoLogger::printInfo(const char* levelStr, const char* color,
                              const char* time_buf, const char* taskName) const {
+  #if CHRONOLOG_PRO_FEATURES && CHRONOLOG_PLOT_ANSI
+    // Any library log line scrolls the terminal, so a live ANSI chart in place
+    // can no longer be assumed. The next plot() must draw fresh, not cursor-up.
+    liveChartLines = 0;
+  #endif
   #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
     if (!uartHandler) return;
     char line_buf[96];
@@ -673,18 +678,17 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
       outputPlotLine(line_buf);
     }
 
-    // X-axis time range line (always emitted so the live ANSI chart has a fixed
-    // height of ROWS + 2 lines, matching liveChartLines).
-    char t0s[16], t1s[16];
+    // X-axis time line: elapsed span across the rendered window (fixed-height line
+    // so the live ANSI chart is always ROWS + 2 lines, matching liveChartLines).
     uint32_t t0 = 0, t1 = 0;
     if (cols >= 2 && s->t_ms[start % CHRONOLOG_PLOT_WINDOW] &&
         s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW]) {
       t0 = s->t_ms[start % CHRONOLOG_PLOT_WINDOW];
       t1 = s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW];
     }
-    formatElapsed(t0s, sizeof(t0s), t0 / 1000u);
-    formatElapsed(t1s, sizeof(t1s), t1 / 1000u);
-    snprintf(line_buf, sizeof(line_buf), "t %s to %s\n", t0s, t1s);
+    char span_buf[16];
+    formatElapsed(span_buf, sizeof(span_buf), (t1 > t0) ? (t1 - t0) / 1000u : 0);
+    snprintf(line_buf, sizeof(line_buf), "t span %s\n", span_buf);
     outputPlotLine(line_buf);
   }
 
