@@ -1,10 +1,8 @@
 // Graph Plotter Example - demonstrates all plot() features.
-// Build with CHRONOLOG_PLOT_ANSI=1 for the live multi-row chart mode.
+// CHRONOLOG_PLOT_ANSI defaults to 1 on desktop (live multi-row chart) and
+// 0 on bare UART (single-line sparkline). Define it explicitly to override.
 #define CHRONOLOG_PRO_FEATURES          1           // Enable Pro features for graph plotter
 #define CHRONOLOG_COLOR_ENABLE          1           // 0 = Disable colors for ANSII-incompatible terminals
-#ifndef CHRONOLOG_PLOT_ANSI
-  #define CHRONOLOG_PLOT_ANSI           1           // 1 = live multi-row chart (needs ANSI terminal)
-#endif
 
 #include "ChronoLog.h"
 #include <thread>
@@ -56,6 +54,23 @@ int main() {
     // plot(series, values, count, timeWindowSec=8) renders 8 time-bucketed columns.
     logger.info("Plot Feature 5: Time-windowed batch (plot(series, values[], count, timeWindowSec))");
     logger.plot("accelT", accel, 32, 8);
+
+    // --- 6. Single-line sparkline fallback (CHRONOLOG_PLOT_ANSI=0)
+    // Demonstrates the bare-UART / plain-serial-monitor mode: one line overwritten
+    // with '\r' instead of a multi-row chart.
+    logger.info("Plot Feature 6: Single-line fallback (CHRONOLOG_PLOT_ANSI=0)");
+    #if CHRONOLOG_PLOT_ANSI
+        logger.info("(CHRONOLOG_PLOT_ANSI=1 here, so live plot() used the multi-row chart above.)");
+    #else
+        phase = 0.0f;
+        for (int i = 0; i < 24; i++) {
+            float value = 20.0f + 5.0f * std::sin(phase);
+            logger.plot("spark", value);
+            phase += 0.35f;
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+        printf("\n");
+    #endif
 
     logger.info("Graph Plotter Example Finished");
     return 0;

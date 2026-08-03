@@ -197,8 +197,10 @@
 #ifndef CHRONOLOG_PLOT_ANSI
   #ifdef CONFIG_CHRONOLOG_PLOT_ANSI
     #define CHRONOLOG_PLOT_ANSI                        CONFIG_CHRONOLOG_PLOT_ANSI
+  #elif defined(CHRONOLOG_PLATFORM_DESKTOP)
+    #define CHRONOLOG_PLOT_ANSI                        1                                                               // Desktop terminals: ANSI live chart by default
   #else
-    #define CHRONOLOG_PLOT_ANSI                        0                                                               // Set to 1 for ANSI-capable terminals
+    #define CHRONOLOG_PLOT_ANSI                        0                                                               // Bare UART: single-line sparkline
   #endif
 #endif // CHRONOLOG_PLOT_ANSI
 

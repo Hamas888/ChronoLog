@@ -350,11 +350,9 @@ void ChronoLogger::printInfo(const char* levelStr, const char* color,
           printf("\x1b[?25l");   // Hide cursor during redraw
           fflush(stdout);
         #endif
-      #endif // CHRONOLOG_PLOT_ANSI
 
-      renderWindowChart(series);
+        renderWindowChart(series);
 
-      #if CHRONOLOG_PLOT_ANSI
         #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
           if (uartHandler) {
             const char* show = "\x1b[?25h";
@@ -366,6 +364,9 @@ void ChronoLogger::printInfo(const char* levelStr, const char* color,
           fflush(stdout);
         #endif
         liveChartLines = CHRONOLOG_PLOT_ROWS + 2;   // header + rows + time line
+      #else
+        // Single-line sparkline fallback (bare UART / plain serial monitor).
+        renderSparkline(series, timeWindowSec);
       #endif // CHRONOLOG_PLOT_ANSI
     }
     #if CHRONOLOG_THREAD_SAFE
