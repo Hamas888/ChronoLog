@@ -610,14 +610,13 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
       if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;
     }
     char tbuf[16];
+    uint32_t t0 = 0, t1 = 0;
     if (cols >= 2 && s->t_ms[start % CHRONOLOG_PLOT_WINDOW] &&
         s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW]) {
-      uint32_t t1 = s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW];
-      uint32_t t0 = s->t_ms[start % CHRONOLOG_PLOT_WINDOW];
-      formatElapsed(tbuf, sizeof(tbuf), (t1 > t0) ? (t1 - t0) / 1000u : 0);
-    } else {
-      snprintf(tbuf, sizeof(tbuf), "00:00:00");
+      t0 = s->t_ms[start % CHRONOLOG_PLOT_WINDOW];
+      t1 = s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW];
     }
+    formatElapsed(tbuf, sizeof(tbuf), (t1 > t0) ? (t1 - t0) / 1000u : 0);
     pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " | max %.1f | last %.1f | t %s\r",
                     max, s->buf[(s->count - 1) % CHRONOLOG_PLOT_WINDOW], tbuf);
     if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;
@@ -674,17 +673,19 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
       outputPlotLine(line_buf);
     }
 
-    // X-axis time range line: t start to end (elapsed across the rendered window).
+    // X-axis time range line (always emitted so the live ANSI chart has a fixed
+    // height of ROWS + 2 lines, matching liveChartLines).
+    char t0s[16], t1s[16];
+    uint32_t t0 = 0, t1 = 0;
     if (cols >= 2 && s->t_ms[start % CHRONOLOG_PLOT_WINDOW] &&
         s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW]) {
-      uint32_t t1 = s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW];
-      uint32_t t0 = s->t_ms[start % CHRONOLOG_PLOT_WINDOW];
-      char t0s[16], t1s[16];
-      formatElapsed(t0s, sizeof(t0s), t0 / 1000u);
-      formatElapsed(t1s, sizeof(t1s), t1 / 1000u);
-      snprintf(line_buf, sizeof(line_buf), "t %s to %s\n", t0s, t1s);
-      outputPlotLine(line_buf);
+      t0 = s->t_ms[start % CHRONOLOG_PLOT_WINDOW];
+      t1 = s->t_ms[(start + cols - 1) % CHRONOLOG_PLOT_WINDOW];
     }
+    formatElapsed(t0s, sizeof(t0s), t0 / 1000u);
+    formatElapsed(t1s, sizeof(t1s), t1 / 1000u);
+    snprintf(line_buf, sizeof(line_buf), "t %s to %s\n", t0s, t1s);
+    outputPlotLine(line_buf);
   }
 
   void ChronoLogger::outputPlotLine(const char* line) const {
