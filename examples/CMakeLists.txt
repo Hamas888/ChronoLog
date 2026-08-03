@@ -19,5 +19,6 @@ endfunction()
 
 add_example(DesktopLogging Desktop/Logging/Logging.cpp "Desktop Logging Example Starting")
 add_example(DesktopProgressBar Desktop/ProgressBar/ProgressBar.cpp "Simulating Download")
+add_example(DesktopGraphPlotter Desktop/GraphPlotter/GraphPlotter.cpp "Graph Plotter Example Starting")
 add_example(DesktopThreadSafety Desktop/ThreadSafety/ThreadSafety.cpp "Desktop Thread Safety Example Starting")
 add_example(DesktopRemoteLogging Desktop/RemoteLogging/RemoteLogging.cpp "Desktop Remote Logging Example Starting")

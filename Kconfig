@@ -24,6 +24,24 @@ menu "ChronoLog Configuration"
         help
             Enable or disable Pro features for the ChronoLog component.
 
+    config CHRONOLOG_PLOT_WINDOW
+        int "Graph Plotter Window"
+        default 64
+        help
+            Number of samples retained per plot series (ring buffer).
+
+    config CHRONOLOG_PLOT_SERIES
+        int "Graph Plotter Series"
+        default 4
+        help
+            Maximum number of named plot series tracked simultaneously.
+
+    config CHRONOLOG_PLOT_ROWS
+        int "Graph Plotter Rows"
+        default 5
+        help
+            Chart height (rows) used by plotWindow().
+
     config CHRONOLOG_REMOTE_ENABLE
         bool "Remote Logging"
         default n

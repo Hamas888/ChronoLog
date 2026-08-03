@@ -98,5 +98,41 @@ int main() {
         }
     }
 
+    // Graph plotter: live sparkline + batch window chart
+    std::string plotOutput;
+    bool plotCaptured = captureStdout([&]() {
+        ChronoLogger plotter("PlotTest", CHRONOLOG_LEVEL_PRO_FEATURES);
+        plotter.plot("temp", 20.0f);
+        plotter.plot("temp", 21.0f);
+        plotter.plot("temp", 19.0f);
+        float series[8] = { 1.0f, 2.0f, 3.0f, 2.0f, 5.0f, 4.0f, 3.0f, 6.0f };
+        plotter.plot("samples", series, 8);
+        plotter.plotWindow("temp");
+        plotter.plotWindow("samples");
+        plotter.plotWindow();
+    }, plotOutput);
+
+    if (!plotCaptured) {
+        std::fprintf(stderr, "Failed to capture plot stdout\n");
+        return 1;
+    }
+
+    std::vector<const char*> plotExpectations = {
+        "temp",
+        "samples",
+        "min=",
+        "max=",
+        "last=",
+        "window=8",
+        "\xE2\x96\x88"  // UTF-8 full block glyph (█)
+    };
+
+    for (const char* expected : plotExpectations) {
+        if (plotOutput.find(expected) == std::string::npos) {
+            std::fprintf(stderr, "Missing expected plot output: %s\n", expected);
+            return 2;
+        }
+    }
+
     return 0;
 }

@@ -166,6 +166,38 @@
   #endif
 #endif // CHRONOLOG_FALLBACK_TASK_NAME
 
+#ifndef CHRONOLOG_PLOT_WINDOW
+  #ifdef CONFIG_CHRONOLOG_PLOT_WINDOW
+    #define CHRONOLOG_PLOT_WINDOW                     CONFIG_CHRONOLOG_PLOT_WINDOW
+  #else
+    #define CHRONOLOG_PLOT_WINDOW                     64                                                              // Samples retained per plot series (ring buffer)
+  #endif
+#endif // CHRONOLOG_PLOT_WINDOW
+
+#ifndef CHRONOLOG_PLOT_SERIES
+  #ifdef CONFIG_CHRONOLOG_PLOT_SERIES
+    #define CHRONOLOG_PLOT_SERIES                     CONFIG_CHRONOLOG_PLOT_SERIES
+  #else
+    #define CHRONOLOG_PLOT_SERIES                     4                                                               // Maximum number of named plot series tracked simultaneously
+  #endif
+#endif // CHRONOLOG_PLOT_SERIES
+
+#ifndef CHRONOLOG_PLOT_ROWS
+  #ifdef CONFIG_CHRONOLOG_PLOT_ROWS
+    #define CHRONOLOG_PLOT_ROWS                       CONFIG_CHRONOLOG_PLOT_ROWS
+  #else
+    #define CHRONOLOG_PLOT_ROWS                       5                                                               // Chart height (rows) for plotWindow()
+  #endif
+#endif // CHRONOLOG_PLOT_ROWS
+
+#ifndef CHRONOLOG_PLOT_BLOCKS
+  #ifdef CONFIG_CHRONOLOG_PLOT_BLOCKS
+    #define CHRONOLOG_PLOT_BLOCKS                     CONFIG_CHRONOLOG_PLOT_BLOCKS
+  #else
+    #define CHRONOLOG_PLOT_BLOCKS                     "\xE2\x96\x81\xE2\x96\x82\xE2\x96\x83\xE2\x96\x84\xE2\x96\x85\xE2\x96\x86\xE2\x96\x87\xE2\x96\x88"  // Sparkline glyphs (8 levels): ▁▂▃▄▅▆▇█
+  #endif
+#endif // CHRONOLOG_PLOT_BLOCKS
+
 #if CHRONOLOG_REMOTE_ENABLE
   #include "ChronoLogRemote.h"
 #endif // CHRONOLOG_REMOTE_ENABLE
@@ -224,6 +256,10 @@ enum ChronoLogLevel {
 
 #if CHRONOLOG_MODE
 
+#if CHRONOLOG_PRO_FEATURES
+  struct PlotSeries;
+#endif // CHRONOLOG_PRO_FEATURES
+
 class ChronoLogger {
 public:
   ChronoLogger(const char* moduleName, ChronoLogLevel level = CHRONOLOG_DEFAULT_LEVEL);
@@ -246,11 +282,20 @@ public:
 
   #if CHRONOLOG_PRO_FEATURES
     void progress(const uint32_t current, const uint32_t total, const char* title) const;
+
+    void plot(const char* series, float value) const;
+    void plot(const char* series, const float* values, size_t count) const;
+    void plotWindow(const char* series) const;
+    void plotWindow() const;
   #endif // CHRONOLOG_PRO_FEATURES
 
 private:
   #if CHRONOLOG_PRO_FEATURES
     void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const;
+    PlotSeries* findPlotSeries(const char* series) const;
+    void renderSparkline(const char* series) const;
+    void renderWindowChart(const char* series) const;
+    void outputPlotLine(const char* line) const;
   #endif // CHRONOLOG_PRO_FEATURES
 
   const char* name;
@@ -286,6 +331,11 @@ public:
 
   #if CHRONOLOG_PRO_FEATURES
     void progress(uint32_t current, uint32_t total, const char* title) const {}
+
+    void plot(const char* series, float value) const {}
+    void plot(const char* series, const float* values, size_t count) const {}
+    void plotWindow(const char* series) const {}
+    void plotWindow() const {}
   #endif // CHRONOLOG_PRO_FEATURES
 
 private:

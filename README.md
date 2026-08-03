@@ -52,6 +52,7 @@ A **cross-platform real-time logging library** for embedded systems that provide
 - **📊 Multiple Log Levels**: DEBUG, INFO, WARN, ERROR, FATAL with runtime level control
 - **🎛️ Module-based Logging**: Create separate loggers for different modules with individual log levels
 - **📈 Progress Bar Support**: Built-in progress tracking with visual progress bars (requires `CHRONOLOG_PRO_FEATURES`)
+- **📊 Graph Plotter**: ASCII graph plotting of numeric series — live sparklines and multi-row window charts (requires `CHRONOLOG_PRO_FEATURES`)
 - **💻 Desktop Support**: Full compatibility with Linux, Windows, and macOS
 - **💾 Memory Efficient**: Minimal per-instance overhead (8 bytes RAM) with ~3 KB flash footprint
 - **🚀 Zero Configuration**: Works out-of-the-box on supported platforms
@@ -339,6 +340,37 @@ void processWithProgress() {
 }
 ```
 
+### Graph Plotter Example
+
+```cpp
+#include "ChronoLog.h"
+
+// Enable pro features in your build configuration
+// #define CHRONOLOG_PRO_FEATURES 1
+
+ChronoLogger logger("Plotter", CHRONOLOG_LEVEL_PRO_FEATURES);
+
+void plotLiveData() {
+    // Live sparkline: push one sample at a time (updates in place with '\r')
+    logger.plot("temp", 24.5f);
+    logger.plot("temp", 25.1f);
+    logger.plot("temp", 23.8f);
+}
+
+void plotBatchData() {
+    // Batch plot: push many samples at once, renders a full window chart
+    float accel[8] = { 1.0f, 2.0f, 3.0f, 2.0f, 5.0f, 4.0f, 3.0f, 6.0f };
+    logger.plot("accel", accel, 8);
+}
+
+void reRenderWindows() {
+    logger.plotWindow("temp");   // Re-render one series as a row chart
+    logger.plotWindow();         // Re-render all registered series
+}
+```
+
+> **Note**: Plots require `CHRONOLOG_PRO_FEATURES` to be enabled and the logger level set to `CHRONOLOG_LEVEL_PRO_FEATURES` or higher. Plot output is terminal-only (not sent over the remote TCP channel). Sample buffers are compile-time configurable via `CHRONOLOG_PLOT_WINDOW` / `CHRONOLOG_PLOT_SERIES` / `CHRONOLOG_PLOT_ROWS`.
+
 ### Remote Logging Example
 
 ```cpp
@@ -437,6 +469,12 @@ ChronoLog allows you to enable or disable features at compile time to optimize f
 #define CHRONOLOG_PRO_FEATURES 1            // Enable Pro features like progress bars (1 = enabled, 0 = disabled)
 #define CHRONOLOG_REMOTE_ENABLE 0           // Enable remote logging via TCP (1 = enabled, 0 = disabled)
 
+// === Graph Plotter Configuration (Pro features only) ===
+#define CHRONOLOG_PLOT_WINDOW 64            // Samples retained per plot series (ring buffer)
+#define CHRONOLOG_PLOT_SERIES 4             // Maximum number of named plot series tracked simultaneously
+#define CHRONOLOG_PLOT_ROWS 5               // Chart height (rows) used by plotWindow()
+// #define CHRONOLOG_PLOT_BLOCKS " .:-=+*#%@"  // Sparkline glyphs; override for ASCII-only terminals (default: ▁▂▃▄▅▆▇█)
+
 // Note: The following features are automatically detected based on platform:
 // - Timestamps are always enabled and use platform-appropriate time sources
 // - Thread/task information is automatically detected on RTOS platforms
@@ -494,7 +532,7 @@ enum ChronoLogLevel {
 };
 ```
 
-**Note**: `CHRONOLOG_LEVEL_PRO_FEATURES` is only available when `CHRONOLOG_PRO_FEATURES` is defined as 1. This conditional level enables advanced features like progress bars while maintaining backward compatibility.
+**Note**: `CHRONOLOG_LEVEL_PRO_FEATURES` is only available when `CHRONOLOG_PRO_FEATURES` is defined as 1. This conditional level enables advanced features like progress bars and graph plotting while maintaining backward compatibility.
 
 ### Runtime Configuration
 
@@ -576,6 +614,7 @@ int main(void) {
 ### Desktop Platforms (Linux, Windows, macOS)
 - **Thread Safety**: Automatic mutex-based synchronization for multi-threaded applications
 - **Progress Bars**: Full support for visual progress tracking
+- **Graph Plotter**: Full support for ASCII sparklines and window charts
 - **System Time**: Uses system clock for real-time timestamps
 - **File Logging**: Optional file output support (coming in future releases)
 - **Colors**: Full ANSI color support in compatible terminals
@@ -593,6 +632,13 @@ int main(void) {
 - Verify `#define CHRONOLOG_PRO_FEATURES 1` is set
 - Ensure logger level is `CHRONOLOG_LEVEL_PRO_FEATURES` or higher
 - Progress bars are only available when Pro features are enabled
+
+**Graph plots not working / garbled**
+- Verify `#define CHRONOLOG_PRO_FEATURES 1` is set
+- Ensure logger level is `CHRONOLOG_LEVEL_PRO_FEATURES` or higher
+- Plots are terminal-only — they are not sent over the remote TCP channel
+- On ASCII-only terminals, set `CHRONOLOG_PLOT_BLOCKS` to a plain string like `" .:-=+*#%@"`
+- For RAM-constrained targets, reduce `CHRONOLOG_PLOT_WINDOW` and `CHRONOLOG_PLOT_SERIES`
 
 **Compilation errors on platform detection**
 - Platform detection is automatic; avoid manually defining platform macros
@@ -705,6 +751,7 @@ ChronoLog/
 | `chronoLogMutex` | ESP-IDF/ESP (handle) | 4 B |
 | `chronoLogMutex` | Zephyr/Uno Q (`k_mutex`) | ~16 B |
 | `threadsMap[10]` | Uno Q only | 80 B |
+| `plotSeries[4]` (plot registry) | Pro features only | ~1.1 KB (`4 × (16 B name + 64 × 4 B samples)`) |
 
 ### Stack usage (hot path)
 
@@ -713,6 +760,8 @@ ChronoLog/
 | `print()` → `printInfo()` | ~300 B | `msg_buf[256]` + `time_buf[16]` |
 | `print()` + remote | ~820 B | `msg_buf[256]` + `full_buf[512]` |
 | `progress()` → `printProgress()` | ~120 B | `prog_buf[100]` + `time_buf[16]` |
+| `plot()` → `renderSparkline()` | ~330 B | `line_buf[4 + 64×4 + 64]` |
+| `plot()` / `plotWindow()` → `renderWindowChart()` | ~320 B | `line_buf[64 + 64×4]` |
 
 ### Estimated flash (`.text`)
 
@@ -722,6 +771,7 @@ ChronoLog/
 | `print()` + format + truncation | ~500 B |
 | `printInfo()` header formatter | ~350 B |
 | `printProgress()` bar renderer | ~400 B |
+| `renderSparkline()` + `renderWindowChart()` | ~500 B |
 | `getTimeStamp()` + `getCurrentTaskName()` | ~450 B |
 | `threadSafeLock()` / `threadSafeUnlock()` | ~200 B |
 | Remote TCP impl | ~600 B |
