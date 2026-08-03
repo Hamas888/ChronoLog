@@ -18,7 +18,7 @@ include(FetchContent)
 FetchContent_Declare(
   chronolog
   GIT_REPOSITORY "https://github.com/Hamas888/ChronoLog.git"
-  GIT_TAG        "epic/v1.6.0-threading-and-quality" # Or a specific version tag, e.g., "v1.0.0"
+  GIT_TAG        "v1.3.0_Logging_Interfaces" # Or a specific version tag, e.g., "v1.0.0"
 )
 
 FetchContent_MakeAvailable(chronolog)
@@ -75,6 +75,7 @@ endif()
 
 add_executable(LoggingExample Logging/Logging.cpp)
 add_executable(ProgressBarExample ProgressBar/ProgressBar.cpp)
+add_executable(GraphPlotterExample GraphPlotter/GraphPlotter.cpp)
 add_executable(RemoteLoggingExample RemoteLogging/RemoteLogging.cpp)
 add_executable(ThreadSafetyExample ThreadSafety/ThreadSafety.cpp)
 
@@ -84,6 +85,7 @@ add_executable(ThreadSafetyExample ThreadSafety/ThreadSafety.cpp)
 
 target_link_libraries(LoggingExample PRIVATE chronolog_lib)
 target_link_libraries(ProgressBarExample PRIVATE chronolog_lib)
+target_link_libraries(GraphPlotterExample PRIVATE chronolog_lib)
 target_link_libraries(RemoteLoggingExample PRIVATE chronolog_lib)
 target_link_libraries(ThreadSafetyExample PRIVATE chronolog_lib)
 
@@ -95,6 +97,7 @@ if(CHRONOLOG_THREAD_SAFE AND (CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin"))
     # Also link other examples if they were to use threads
     target_link_libraries(LoggingExample PRIVATE Threads::Threads)
     target_link_libraries(ProgressBarExample PRIVATE Threads::Threads)
+    target_link_libraries(GraphPlotterExample PRIVATE Threads::Threads)
     target_link_libraries(RemoteLoggingExample PRIVATE Threads::Threads)
 endif()
 
