@@ -28,14 +28,18 @@ int main() {
         phase += 0.35f;
         std::this_thread::sleep_for(std::chrono::milliseconds(20));   // Simulate work
     }
-    printf("\n");                                                       // Move past the live chart
+    #if !CHRONOLOG_PLOT_ANSI
+        printf("\n");   // Move past the single-line sparkline (ANSI chart already ends with \n)
+    #endif
 
     // --- 2. Flat series edge case (max == min) is handled gracefully
     logger.info("Plot Feature 2: Flat series (constant value)");
     for (int i = 0; i < 12; i++) {
         logger.plot("steady", 42.0f);
     }
-    printf("\n");
+    #if !CHRONOLOG_PLOT_ANSI
+        printf("\n");
+    #endif
 
     // --- 3. Batch plot: push multiple values at once, renders a full window chart
     logger.info("Plot Feature 3: Batch window chart (plot(series, values[], count))");
