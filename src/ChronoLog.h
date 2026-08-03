@@ -194,7 +194,7 @@
   #ifdef CONFIG_CHRONOLOG_PLOT_BLOCKS
     #define CHRONOLOG_PLOT_BLOCKS                     CONFIG_CHRONOLOG_PLOT_BLOCKS
   #else
-    #define CHRONOLOG_PLOT_BLOCKS                     "\xE2\x96\x81\xE2\x96\x82\xE2\x96\x83\xE2\x96\x84\xE2\x96\x85\xE2\x96\x86\xE2\x96\x87\xE2\x96\x88"  // Sparkline glyphs (8 levels): ▁▂▃▄▅▆▇█
+    #define CHRONOLOG_PLOT_BLOCKS                     { "\xE2\x96\x81", "\xE2\x96\x82", "\xE2\x96\x83", "\xE2\x96\x84", "\xE2\x96\x85", "\xE2\x96\x86", "\xE2\x96\x87", "\xE2\x96\x88" }  // Sparkline glyphs (8 levels): ▁▂▃▄▅▆▇█
   #endif
 #endif // CHRONOLOG_PLOT_BLOCKS
 

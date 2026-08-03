@@ -473,7 +473,7 @@ ChronoLog allows you to enable or disable features at compile time to optimize f
 #define CHRONOLOG_PLOT_WINDOW 64            // Samples retained per plot series (ring buffer)
 #define CHRONOLOG_PLOT_SERIES 4             // Maximum number of named plot series tracked simultaneously
 #define CHRONOLOG_PLOT_ROWS 5               // Chart height (rows) used by plotWindow()
-// #define CHRONOLOG_PLOT_BLOCKS " .:-=+*#%@"  // Sparkline glyphs; override for ASCII-only terminals (default: ▁▂▃▄▅▆▇█)
+// #define CHRONOLOG_PLOT_BLOCKS { " ", ".", ":", "-", "=", "+", "*", "#" }  // 8 glyphs, low to high; ASCII-only terminals (default: ▁▂▃▄▅▆▇█)
 
 // Note: The following features are automatically detected based on platform:
 // - Timestamps are always enabled and use platform-appropriate time sources
@@ -637,7 +637,7 @@ int main(void) {
 - Verify `#define CHRONOLOG_PRO_FEATURES 1` is set
 - Ensure logger level is `CHRONOLOG_LEVEL_PRO_FEATURES` or higher
 - Plots are terminal-only — they are not sent over the remote TCP channel
-- On ASCII-only terminals, set `CHRONOLOG_PLOT_BLOCKS` to a plain string like `" .:-=+*#%@"`
+- On ASCII-only terminals, set `CHRONOLOG_PLOT_BLOCKS` to an 8-element array of single-char strings, e.g. `{ " ", ".", ":", "-", "=", "+", "*", "#" }`
 - For RAM-constrained targets, reduce `CHRONOLOG_PLOT_WINDOW` and `CHRONOLOG_PLOT_SERIES`
 
 **Compilation errors on platform detection**

@@ -503,11 +503,12 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
       int idx = (int)((v - min) / range * 7.0f);
       if (idx < 0) idx = 0;
       if (idx > 7) idx = 7;
-      pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " %s",
-                      &CHRONOLOG_PLOT_BLOCKS[idx * 3]);
+      pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " %s", CHRONOLOG_PLOT_BLOCKS[idx]);
+      if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;  // Never point past the buffer
     }
     pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " | min=%.1f max=%.1f last=%.1f",
                     min, max, s->buf[(s->count - 1) % CHRONOLOG_PLOT_WINDOW]);
+    if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;
     snprintf(line_buf + pos, sizeof(line_buf) - pos, "\r");
 
     #if defined(CHRONOLOG_PLATFORM_STM32_HAL)
@@ -554,7 +555,8 @@ void ChronoLogger::printProgress(const char* levelStr, const char* color, uint32
         if (cell < 0) cell = 0;
         if (cell > CHRONOLOG_PLOT_ROWS - 1) cell = CHRONOLOG_PLOT_ROWS - 1;
         pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, " %s",
-                        (cell >= row) ? &CHRONOLOG_PLOT_BLOCKS[7 * 3] : " ");
+                        (cell >= row) ? CHRONOLOG_PLOT_BLOCKS[7] : " ");
+        if ((size_t)pos >= sizeof(line_buf)) pos = (int)sizeof(line_buf) - 1;  // Never point past the buffer
       }
       pos += snprintf(line_buf + pos, sizeof(line_buf) - pos, "\n");
       outputPlotLine(line_buf);
