@@ -1,0 +1,4 @@
+name: chronolog
+build:
+  cmake: .
+  kconfig: Kconfig

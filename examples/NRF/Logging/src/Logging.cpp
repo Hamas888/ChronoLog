@@ -1,6 +1,4 @@
-extern "C" {
-#include <stdio.h>
-}
+#include <zephyr/kernel.h>
 
 #include "ChronoLog.h"
 

@@ -1,0 +1,26 @@
+#include <zephyr/kernel.h>
+#include <Arduino_RouterBridge.h>
+
+#define CHRONOLOG_COLOR_ENABLE          1           // 0 = Disable colors for ANSII-incompatible terminals
+
+#include "ChronoLog.h"
+
+ChronoLogger logger("myLogger", CHRONOLOG_LEVEL_DEBUG);
+
+
+void setup() {
+  Monitor.begin();
+
+  logger.debug("Arduino Uno Q Logging Example Starting...");
+  logger.info("Logger initialized successfully at DEBUG level");
+}
+
+void loop() {
+  logger.debug("This is a debug message");
+  logger.info("This is an info message");
+  logger.warn("This is a warning message");
+  logger.error("This is an error message");
+  logger.fatal("This is a fatal message");
+
+  k_msleep(5000);                                                                // Log messages every 5 seconds
+}

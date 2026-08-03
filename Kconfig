@@ -1,0 +1,58 @@
+menu "ChronoLog Configuration"
+
+    config CHRONOLOG_MODE
+        bool "Enable ChronoLogging"
+        default y
+        help
+            Enable or disable ChronoLog component.
+
+    config CHRONOLOG_THREAD_SAFE
+        bool "Enable ChronoLog Thread Safety"
+        default y
+        help
+            Enable or disable thread safety for the ChronoLog component.
+    
+    config CHRONOLOG_COLOR_ENABLE
+         bool "Enable ChronoLog Color Output"
+         default y
+         help
+             Enable or disable colored output for ChronoLog messages.
+
+    config CHRONOLOG_PRO_FEATURES
+        bool "Pro Features"
+        default n
+        help
+            Enable or disable Pro features for the ChronoLog component.
+
+    config CHRONOLOG_REMOTE_ENABLE
+        bool "Remote Logging"
+        default n
+        help
+            Enable or disable remote logging capabilities for the ChronoLog component.
+        
+    config CHRONOLOG_BUFFER_LEN
+        int "ChronoLog Buffer Length"
+        default 256
+        help
+            The length of the buffer used by the ChronoLog component.
+
+    config CHRONOLOG_MAX_THREADS
+        int "ChronoLog Maximum Threads"
+        default 10
+        help
+            The maximum number of threads to track for the ChronoLog component.
+    config CHRONOLOG_DEFAULT_LEVEL
+        int "ChronoLog Default Level"
+        range 0 5
+        default 5
+        help
+            Default log level used by ChronoLogger instances where no level is set.
+            0=CHRONOLOG_LEVEL_NONE, 1=FATAL, 2=ERROR, 3=WARN, 4=INFO, 5=DEBUG.
+
+    config CHRONOLOG_FALLBACK_TASK_NAME
+        string "ChronoLog Fallback Task Name"
+        default "MainTask"
+        help
+            Fallback task name used in log output when an RTOS task/thread name is not available.
+
+endmenu
