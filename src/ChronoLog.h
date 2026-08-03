@@ -299,6 +299,8 @@ private:
   #if CHRONOLOG_PRO_FEATURES
     void printProgress(const char* levelStr, const char* color, uint32_t current, uint32_t total, const char* title) const;
     PlotSeries* findPlotSeries(const char* series) const;
+    uint32_t renderBucketed(const PlotSeries* s, uint32_t span, uint32_t start,
+                            uint32_t timeWindowSec, float* outMin, float* outMax) const;
     void renderSparkline(const char* series, uint32_t timeWindowSec) const;
     void renderWindowChart(const char* series) const;
     void outputPlotLine(const char* line) const;
