@@ -41,6 +41,8 @@ option(CHRONOLOG_REMOTE_ENABLE "Enable remote TCP logging" ON)
 add_library(chronolog_lib STATIC
     ${chronolog_SOURCE_DIR}/src/ChronoLog.cpp
     ${chronolog_SOURCE_DIR}/src/ChronoLogRemote.cpp
+    ${chronolog_SOURCE_DIR}/src/ChronoLogSink.cpp
+    ${chronolog_SOURCE_DIR}/src/ChronoLogFileSink.cpp
 )
 
 # Add the 'src' directory to the library's include path so it can find "ChronoLog.h".
@@ -69,6 +71,9 @@ endif()
 if(CHRONOLOG_REMOTE_ENABLE)
     target_compile_definitions(chronolog_lib PUBLIC -DCHRONOLOG_REMOTE_ENABLE=1)
 endif()
+
+# Enable the log sink interface + desktop file sink.
+target_compile_definitions(chronolog_lib PUBLIC -DCHRONOLOG_SINKS_ENABLE=1)
 
 # --- Build the Desktop Examples ---
 # Each example is defined as a separate executable.
