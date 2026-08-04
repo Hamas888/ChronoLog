@@ -105,7 +105,6 @@ private:
 
   char currentModule_[16];
   size_t currentSize_;
-  bool headerWritten_;
 };
 
 #endif // CHRONOLOG_SINKS_ENABLE && (ESP_IDF || ESP)

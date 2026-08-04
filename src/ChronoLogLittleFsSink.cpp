@@ -111,14 +111,31 @@ static int chrono_rename_path(const char* a, const char* b) {
   #endif
 }
 
+static long chrono_size_of(const char* path) {
+  #if defined(CHRONOLOG_PLATFORM_ESP_IDF)
+    struct stat st;
+    if (stat(path, &st) != 0) return -1;
+    return (long)st.st_size;
+  #else
+    if (!LittleFS.begin(true)) return -1;
+    char full[256];
+    if (path[0] != '/') snprintf(full, sizeof(full), "/%s", path); else snprintf(full, sizeof(full), "%s", path);
+    if (!LittleFS.exists(full)) return -1;
+    File f = LittleFS.open(full, "r");
+    if (!f) return -1;
+    long sz = (long)f.size();
+    f.close();
+    return sz;
+  #endif
+}
+
 ChronoLogLittleFsSink::ChronoLogLittleFsSink()
   : mounted_(false),
     maxFileBytes_(CHRONOLOG_SINK_FILE_MAX_BYTES),
     rotations_(CHRONOLOG_SINK_FILE_ROTATIONS),
     condensed_(CHRONOLOG_SINK_FILE_CONDENSED != 0),
     timeProvider_(NULL),
-    currentSize_(0),
-    headerWritten_(false) {
+    currentSize_(0) {
   currentModule_[0] = '\0';
 }
 
@@ -166,7 +183,7 @@ void ChronoLogLittleFsSink::writeHeader(void* file, const char* module) {
   char buf[128];
   int n = snprintf(buf, sizeof(buf), "%smodule = \"%s\"\n", CHRONOLOG_LOG_SIGNATURE, module);
   chrono_write((chrono_file*)file, buf, (size_t)n);
-  headerWritten_ = true;
+  currentSize_ += (size_t)n;
 }
 
 void ChronoLogLittleFsSink::checkRotation(const char* module) {
@@ -185,7 +202,6 @@ void ChronoLogLittleFsSink::checkRotation(const char* module) {
   snprintf(newPath, sizeof(newPath), "%s/logs/%s.0.log", CHRONO_FS_MOUNT_POINT, module);
   chrono_rename_path(oldPath, newPath);
   currentSize_ = 0;
-  headerWritten_ = false;
 }
 
 void ChronoLogLittleFsSink::writeFileInternal(const char* module, const char* line) {
@@ -198,8 +214,9 @@ void ChronoLogLittleFsSink::writeFileInternal(const char* module, const char* li
   chrono_file f = chrono_open(path, "a");
   if (!f.isOpen) return;
 
-  // Write the module header on first open for this module.
-  if (!headerWritten_ || strcmp(currentModule_, module) != 0) {
+  // Write the module header only on a fresh (empty) file - never repeat on reopen.
+  long existing = chrono_size_of(path);
+  if (existing <= 0) {
     writeHeader(&f, module);
     snprintf(currentModule_, sizeof(currentModule_), "%s", module);
   }

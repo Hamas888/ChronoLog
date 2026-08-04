@@ -73,7 +73,9 @@ int main() {
   logger.warn("condensed warn");
   ChronoLogSinkRegistry::instance().flushAll();
   content = readFile(path);
-  if (content.find("|W| condensed warn") == std::string::npos) {
+  // Condensed format: time |W| T<n> | condensed warn
+  if (content.find("|W| T") == std::string::npos ||
+      content.find("condensed warn") == std::string::npos) {
     std::fprintf(stderr, "FAIL: expected condensed |W| line, got:\n%s\n", content.c_str());
     return 6;
   }
