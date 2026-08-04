@@ -24,6 +24,7 @@ ChronoLogFileSink::ChronoLogFileSink()
     headerWritten_(false) {
   snprintf(logsDir_, sizeof(logsDir_), "logs");
   currentModule_[0] = '\0';
+  mkdir(logsDir_, 0755);   // ensure default logs/ dir exists
 }
 
 ChronoLogFileSink::~ChronoLogFileSink() {
@@ -107,6 +108,8 @@ void ChronoLogFileSink::writeHeader(FILE* f, const char* module) {
 }
 
 void ChronoLogFileSink::ensureOpen(const char* module) {
+  // Ensure the target directory exists (mkdir is idempotent).
+  mkdir(logsDir_, 0755);
   // Rotate before opening if the current file exceeds the cap.
   checkRotation(module);
 
