@@ -97,8 +97,6 @@ private:
   };
   ThreadEntry threads_[32];
   int threadCount_;
-
-  bool headerWritten_;
 };
 
 #endif // CHRONOLOG_SINKS_ENABLE && CHRONOLOG_PLATFORM_DESKTOP

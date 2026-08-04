@@ -20,8 +20,7 @@ ChronoLogFileSink::ChronoLogFileSink()
     condensed_(CHRONOLOG_SINK_FILE_CONDENSED != 0),
     currentFile_(NULL),
     currentSize_(0),
-    threadCount_(0),
-    headerWritten_(false) {
+    threadCount_(0) {
   snprintf(logsDir_, sizeof(logsDir_), "logs");
   currentModule_[0] = '\0';
   mkdir(logsDir_, 0755);   // ensure default logs/ dir exists
@@ -65,9 +64,8 @@ void ChronoLogFileSink::checkRetention(FILE* f, const char* path) {
   if (stat(path, &st) != 0) return;
   time_t now = time(NULL);
   if (now - st.st_mtime > (time_t)retentionDays_ * 86400L) {
-    // File too old - truncate/recreate.
+    // File too old - truncate/recreate (currentSize_ 0 => header rewritten).
     freopen(path, "w", f);
-    headerWritten_ = false;
     currentSize_ = 0;
   }
 }
@@ -77,7 +75,6 @@ void ChronoLogFileSink::checkRotation(const char* module) {
   if (currentFile_) fclose(currentFile_);
   currentFile_ = NULL;
   currentSize_ = 0;
-  headerWritten_ = false;
 
   // Rotate: module.N.txt -> module.N+1.txt (ring of `rotations_` backups).
   char oldPath[512], newPath[512];
@@ -97,14 +94,20 @@ void ChronoLogFileSink::checkRotation(const char* module) {
 }
 
 void ChronoLogFileSink::writeHeader(FILE* f, const char* module) {
-  fprintf(f, "%s", CHRONOLOG_LOG_SIGNATURE);
-  fprintf(f, "module = \"%s\"\n", module);
+  // Track the bytes written so currentSize_ reflects the file content and the
+  // header is never repeated on reopen.
+  char buf[128];
+  int n = snprintf(buf, sizeof(buf), "%smodule = \"%s\"\n", CHRONOLOG_LOG_SIGNATURE, module);
+  fprintf(f, "%s", buf);
+  currentSize_ += (size_t)n;
+
   char tbuf[32];
   time_t now = time(NULL);
   struct tm* t = localtime(&now);
   strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M:%S", t);
-  fprintf(f, "created = %s\n", tbuf);
-  headerWritten_ = true;
+  n = snprintf(buf, sizeof(buf), "created = %s\n", tbuf);
+  fprintf(f, "%s", buf);
+  currentSize_ += (size_t)n;
 }
 
 void ChronoLogFileSink::ensureOpen(const char* module) {
@@ -125,13 +128,13 @@ void ChronoLogFileSink::ensureOpen(const char* module) {
   snprintf(path, sizeof(path), "%s/%s.txt", logsDir_, module);
   currentFile_ = fopen(path, "a");
   currentSize_ = 0;
-  headerWritten_ = false;
   if (currentFile_) {
     // Record initial size (from a previous session) and apply retention.
     struct stat st;
     if (stat(path, &st) == 0) currentSize_ = (size_t)st.st_size;
     checkRetention(currentFile_, path);
-    if (!headerWritten_) writeHeader(currentFile_, module);
+    // Write the header only on a fresh (empty) file - never repeat it on reopen.
+    if (currentSize_ == 0) writeHeader(currentFile_, module);
   }
 }
 
