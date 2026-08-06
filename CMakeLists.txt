@@ -14,7 +14,7 @@ endif()
 # Check if we're building with Zephyr
 if(DEFINED ZEPHYR_BASE)
 
-    zephyr_library()
+    zephyr_library_named(ChronoLog)
     zephyr_library_sources(src/ChronoLog.cpp src/ChronoLogRemote.cpp)
     zephyr_include_directories(src)
 
